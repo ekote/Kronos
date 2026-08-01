@@ -1,0 +1,16 @@
+name: kronos-serving
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      # Kronos runtime (mirrors repo requirements.txt) + AML inference server.
+      - torch>=2.0.0
+      - numpy
+      - pandas==2.2.2
+      - einops==0.8.1
+      - huggingface_hub==0.33.1
+      - safetensors==0.6.2
+      - tqdm==4.67.1
+      - azureml-inference-server-http

@@ -1,0 +1,116 @@
+// =============================================================================
+// Kronos on Fabric RTI — forecast store, dashboard queries, Data Activator feeds
+// =============================================================================
+
+// --- Forecast store ----------------------------------------------------------
+// One row per predicted candle. run_id + model_version + params make every
+// forecast reproducible and comparable against the realized candle.
+.create table forecasts (
+    symbol:        string,
+    run_id:        string,     // one id per batch inference run
+    run_time:      datetime,   // when the forecast was produced
+    target_time:   datetime,   // the candle timestamp being forecast
+    open:          real,
+    high:          real,
+    low:           real,
+    close:         real,
+    volume:        real,
+    amount:        real,
+    horizon_step:  int,        // 1..pred_len
+    model_version: string,     // AML registered model version / fine-tune id
+    sampling:      dynamic     // {T, top_p, top_k, sample_count}
+)
+
+.create table forecasts ingestion json mapping "forecasts_map"
+```
+[
+  {"column":"symbol",        "path":"$.symbol"},
+  {"column":"run_id",        "path":"$.run_id"},
+  {"column":"run_time",      "path":"$.run_time"},
+  {"column":"target_time",   "path":"$.target_time"},
+  {"column":"open",          "path":"$.open"},
+  {"column":"high",          "path":"$.high"},
+  {"column":"low",           "path":"$.low"},
+  {"column":"close",         "path":"$.close"},
+  {"column":"volume",        "path":"$.volume"},
+  {"column":"amount",        "path":"$.amount"},
+  {"column":"horizon_step",  "path":"$.horizon_step"},
+  {"column":"model_version", "path":"$.model_version"},
+  {"column":"sampling",      "path":"$.sampling"}
+]
+```
+
+.alter table forecasts policy retention softdelete = 90d
+.alter table forecasts policy caching hot = 7d
+
+// Keep only the newest forecast run per (symbol, target_time) for the dashboard.
+.create-or-alter function LatestForecast(sym:string) {
+    forecasts
+    | where symbol == sym
+    | summarize arg_max(run_time, *) by target_time
+    | order by target_time asc
+}
+
+// =============================================================================
+// Real-Time Dashboard queries
+// =============================================================================
+
+// --- Actual vs forecast candles (candlestick overlay) ------------------------
+// Actuals from candles_5m, predictions from the latest forecast run.
+.create-or-alter function DashActualVsForecast(sym:string, hist:int) {
+    let actual =
+        materialized_view('candles_5m')
+        | where symbol == sym
+        | top hist by event_time desc
+        | project event_time, open, high, low, close, series="actual";
+    let pred =
+        LatestForecast(sym)
+        | project event_time = target_time, open, high, low, close, series="forecast";
+    union actual, pred
+    | order by event_time asc
+}
+
+// --- Rolling forecast accuracy (closed forecasts vs realized) ----------------
+// Join each forecast target_time to the realized 1m candle and score error.
+.create-or-alter function ForecastAccuracy(sym:string, since:timespan) {
+    forecasts
+    | where symbol == sym and target_time > ago(since) and target_time < now()
+    | join kind=inner (
+        materialized_view('candles_1m')
+        | where symbol == sym
+        | project target_time = event_time, actual_close = close
+      ) on target_time
+    | extend abs_err = abs(close - actual_close),
+             pct_err = abs(close - actual_close) / actual_close,
+             dir_hit = iff(sign(close - prev(close)) == sign(actual_close - prev(actual_close)), 1.0, 0.0)
+    | summarize mae = avg(abs_err), mape = avg(pct_err), directional_acc = avg(dir_hit),
+                n = count()
+      by bin(target_time, 15m)
+    | order by target_time asc
+}
+
+// =============================================================================
+// Data Activator (Reflex) feed queries
+// =============================================================================
+
+// --- Signal: forecast predicts a large move over the horizon -----------------
+// Reflex watches this; fire when abs(expected move) exceeds a threshold.
+.create-or-alter function SignalLargeMove(threshold_pct:real) {
+    forecasts
+    | where run_time > ago(5m)
+    | summarize first_close = arg_min(horizon_step, close),
+                last_close  = arg_max(horizon_step, close),
+                run_id = any(run_id), model_version = any(model_version)
+      by symbol, run_time
+    | extend expected_move_pct = (last_close - first_close) / first_close
+    | where abs(expected_move_pct) >= threshold_pct
+    | project run_time, symbol, expected_move_pct, run_id, model_version
+}
+
+// --- Model-health: realized price diverges from forecast beyond a band -------
+// Reflex watches this; fire to alert on-call and/or trigger re-fine-tuning.
+.create-or-alter function AlertForecastDrift(sym:string, band_pct:real) {
+    ForecastAccuracy(sym, 1h)
+    | where mape > band_pct
+    | project target_time, sym, mape, directional_acc, n
+}

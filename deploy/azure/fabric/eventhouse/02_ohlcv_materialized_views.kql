@@ -1,0 +1,55 @@
+// =============================================================================
+// Kronos on Fabric RTI — OHLCV candle construction via materialized views
+// These are incrementally maintained by the engine and are always query-ready.
+// The OHLCV shape produced here is exactly what KronosPredictor.predict expects.
+// =============================================================================
+
+// --- 1-minute candles --------------------------------------------------------
+.create materialized-view with (backfill=true) candles_1m on table ticks_raw {
+    ticks_raw
+    | summarize
+        open   = arg_min(event_time, price),
+        high   = max(price),
+        low    = min(price),
+        close  = arg_max(event_time, price),
+        volume = sum(size),
+        amount = sum(price * size),        // approx. traded amount (Kronos optional col)
+        ticks  = count()
+      by symbol, event_time = bin(event_time, 1m)
+}
+
+// --- 5-minute candles --------------------------------------------------------
+.create materialized-view with (backfill=true) candles_5m on table ticks_raw {
+    ticks_raw
+    | summarize
+        open   = arg_min(event_time, price),
+        high   = max(price),
+        low    = min(price),
+        close  = arg_max(event_time, price),
+        volume = sum(size),
+        amount = sum(price * size),
+        ticks  = count()
+      by symbol, event_time = bin(event_time, 5m)
+}
+
+// --- Lookback feed for the model --------------------------------------------
+// Returns the most recent `lookback` closed candles for a symbol, oldest-first,
+// in the exact column order Kronos consumes: open, high, low, close, volume, amount.
+// The Fabric orchestrator calls this (per symbol, or unioned across the universe).
+.create-or-alter function KronosLookback(sym:string, lookback:int) {
+    materialized_view('candles_1m')
+    | where symbol == sym
+    | where event_time < bin(now(), 1m)          // only fully-closed candles
+    | top lookback by event_time desc
+    | order by event_time asc
+    | project event_time, open, high, low, close, volume, amount
+}
+
+// --- Universe-wide lookback (drives predict_batch in one query) --------------
+.create-or-alter function KronosLookbackUniverse(lookback:int) {
+    materialized_view('candles_1m')
+    | where event_time < bin(now(), 1m)
+    | partition by symbol (top lookback by event_time desc)
+    | order by symbol asc, event_time asc
+    | project symbol, event_time, open, high, low, close, volume, amount
+}

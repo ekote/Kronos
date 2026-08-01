@@ -1,0 +1,43 @@
+# GPU deployment for the Kronos endpoint (blue/green: create "green", then shift traffic).
+#   az ml online-deployment create -f deployment.yml --all-traffic
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: kronos-forecast
+
+# The model registered from HuggingFace NeoQuasar/* or your fine-tuned checkpoints.
+# Register with: az ml model create --name kronos-base --path ./model_artifacts --type custom_model
+model: azureml:kronos-base@latest
+
+code_configuration:
+  code: ../../..           # repo root so `from model import ...` resolves
+  scoring_script: deploy/azure/azureml/score.py
+
+environment:
+  conda_file: environment/conda.yml
+  # CUDA-enabled base image; pin to a curated AzureML image in production.
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04
+
+environment_variables:
+  KRONOS_TOKENIZER_ID: NeoQuasar/Kronos-Tokenizer-base
+  KRONOS_MODEL_ID: NeoQuasar/Kronos-base
+  KRONOS_MAX_CONTEXT: "512"
+  KRONOS_MODEL_VERSION: kronos-base@latest
+
+# Single T4/A10 handles Kronos-small/base; move to NC A100 v4 for -large or high sample_count.
+instance_type: Standard_NC4as_T4_v3
+instance_count: 1
+
+request_settings:
+  request_timeout_ms: 60000
+  max_concurrent_requests_per_instance: 1   # autoregressive decode is GPU-bound; batch symbols per call
+
+scale_settings:
+  type: target_utilization
+  min_instances: 1
+  max_instances: 4
+  target_utilization_percentage: 70
+
+liveness_probe:
+  initial_delay: 60
+readiness_probe:
+  initial_delay: 60

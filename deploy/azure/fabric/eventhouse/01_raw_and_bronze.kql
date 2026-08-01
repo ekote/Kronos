@@ -1,0 +1,44 @@
+// =============================================================================
+// Kronos on Fabric RTI — Eventhouse (KQL DB) : raw landing + ingestion mapping
+// Run these control commands in the Fabric Eventhouse / KQL queryset.
+// =============================================================================
+
+// --- Raw tick landing table --------------------------------------------------
+// Eventstream (fed by Azure Event Hubs) writes normalized market events here.
+.create table ticks_raw (
+    symbol:      string,      // e.g. "BTCUSDT", "600977.SH"
+    event_time:  datetime,    // exchange/event timestamp (UTC)
+    price:       real,        // trade / last price
+    size:        real,        // trade size / volume for this event
+    source:      string,      // feed identifier (venue, vendor)
+    ingest_time: datetime     // set at ingestion for latency monitoring
+)
+
+// --- JSON ingestion mapping used by the Eventstream destination --------------
+.create table ticks_raw ingestion json mapping "ticks_raw_map"
+```
+[
+  {"column":"symbol",      "path":"$.symbol"},
+  {"column":"event_time",  "path":"$.event_time"},
+  {"column":"price",       "path":"$.price"},
+  {"column":"size",        "path":"$.size"},
+  {"column":"source",      "path":"$.source"},
+  {"column":"ingest_time", "path":"$.ingest_time"}
+]
+```
+
+// --- Retention / caching -----------------------------------------------------
+// Keep a long tail for reproducibility; hot-cache only the live window used by
+// the model lookback + dashboards. Tune to your Fabric capacity.
+.alter table ticks_raw policy retention softdelete = 90d
+.alter table ticks_raw policy caching hot = 2d
+
+// --- Ingestion latency / freshness helper -----------------------------------
+// End-to-end freshness = when did the most recent event actually land.
+.create-or-alter function IngestionLatency() {
+    ticks_raw
+    | summarize last_event = max(event_time),
+                last_ingest = max(ingest_time),
+                lag_seconds = datetime_diff('second', max(ingest_time), max(event_time))
+      by symbol
+}
