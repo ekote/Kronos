@@ -71,6 +71,10 @@ venv.bak/
 # Demo output
 deploy/azure/demo/output/
 
+# Local env / secrets
+.env
+!.env.example
+
 # Temporary files
 *.tmp
 *.temp

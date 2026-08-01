@@ -78,6 +78,23 @@ The raw-tick replay is the large part; `--no-tick-kql` still emits forecasts,
 signals, and alerts (and you can rebuild candles from a smaller tick sample or
 your own feed).
 
+## Deploy + run it in Fabric (one command)
+
+To actually stand it up in Microsoft Fabric — provision an Eventhouse and replay
+every table into it — use the parametrized deployer:
+
+```bash
+cd fabric_deploy
+pip install -r requirements-deploy.txt
+cp .env.example .env                       # fill in (non-secret values)
+python deploy_to_fabric.py --dry-run       # print the plan, no network
+python deploy_to_fabric.py                 # deploy
+```
+
+Config is in `.env`; auth is via `DefaultAzureCredential` (no secret in a file).
+See [`fabric_deploy/README.md`](./fabric_deploy/) for prerequisites (a Fabric
+capacity is required), auth options, and what it does vs. leaves manual.
+
 ## Running with the real Kronos model
 
 The forecaster is an adapter. To swap the transparent baseline for the real

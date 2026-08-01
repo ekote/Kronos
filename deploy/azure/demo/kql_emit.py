@@ -161,6 +161,64 @@ union actual, latest | order by event_time asc
 """
 
 
+def _model_version(result):
+    return "kronos-base@demo" if result["stats"]["engine"] == "kronos" else "baseline@demo"
+
+
+def _sampling(result):
+    return result["config"].get("sampling") or {"T": 1.0, "top_p": 0.9, "top_k": 0, "sample_count": 1}
+
+
+def _batches(text):
+    """Split an emitter's multi-batch output into individual, runnable commands."""
+    for block in text.split("\n\n"):
+        block = block.strip()
+        if block and not block.startswith("//"):
+            yield block
+
+
+def iter_commands(result, include_ticks=True):
+    """Yield ordered (stage, kql_command) pairs for programmatic execution.
+
+    Each yielded command is a single control command safe to pass to
+    KustoClient.execute_mgmt — in the correct order (tables, ticks, then the
+    candles_1m materialized view with backfill, then forecasts/signals/alerts).
+    """
+    symbol = result["meta"]["symbol"]
+    mv = _model_version(result)
+    sampling = _sampling(result)
+
+    for line in _SETUP.splitlines():
+        if line.strip().startswith(".create-merge"):
+            yield ("setup", line.strip())
+
+    if include_ticks and result.get("ticks"):
+        for b in _batches(emit_ticks(result["ticks"])):
+            yield ("ticks", b)
+
+    mv_cmd = "\n".join(l for l in _MV.splitlines() if not l.strip().startswith("//")).strip()
+    yield ("candles_view", mv_cmd)
+
+    for b in _batches(emit_forecasts(result["runs"], symbol, mv, sampling)):
+        yield ("forecasts", b)
+    for b in _batches(emit_signals(result["signals"], symbol, mv)):
+        yield ("signals", b)
+    for b in _batches(emit_alerts(result["drift"], symbol, result["drift"]["band"])):
+        yield ("model_health_alerts", b)
+
+
+def verify_queries(symbol):
+    """Read-only queries to confirm the round-trip landed (run with execute)."""
+    return [
+        ("ticks_raw", "ticks_raw | summarize rows=count(), first=min(event_time), last=max(event_time)"),
+        ("candles_1m", "materialized_view('candles_1m') | summarize candles=count() by symbol"),
+        ("forecasts", "forecasts | summarize rows=count(), runs=dcount(run_id)"),
+        ("signals", "signals | summarize rows=count(), hits=countif(hit)"),
+        ("model_health_alerts",
+         "model_health_alerts | summarize rows=count(), first_alert=min(alert_time)"),
+    ]
+
+
 # ---- bundle -----------------------------------------------------------------
 def write_kql_bundle(result, outdir, emit_ticks_data=True, tick_batch=1000):
     """Write the full KQL replay bundle; return {filename: row_count/bytes} meta."""
