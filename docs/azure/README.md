@@ -11,6 +11,19 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
   design: architecture diagram, component design, data flow, MLOps, sizing, and
   cross-cutting concerns (security, networking, cost, DR).
 
+## Runnable demo (start here to see the value)
+
+A **zero-dependency** end-to-end demo runs the whole architecture on a synthetic
+trading session and renders a self-contained HTML report:
+
+```bash
+python deploy/azure/demo/run_demo.py   # writes output/kronos_fabric_demo.html
+```
+
+It tells the story in three acts — momentum signals during the rally, an
+unpredictable news shock, and a model-health guardrail that **auto-detects the
+regime break within ~17 minutes**. See [`deploy/azure/demo/`](../../deploy/azure/demo/).
+
 ## Reference implementation
 
 Concrete, staged scaffolding lives under [`deploy/azure/`](../../deploy/azure/):
