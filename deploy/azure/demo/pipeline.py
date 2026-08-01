@@ -174,7 +174,9 @@ def summarize(runs, signals, drift, meta, forecaster, config):
 
 def run_pipeline(candles, meta, forecaster, lookback=120, pred_len=30, stride=3,
                  signal_threshold=0.010, sampling=None):
-    config = {"lookback": lookback, "pred_len": pred_len, "stride": stride}
+    sampling = sampling or {"T": 1.0, "top_p": 0.9, "top_k": 0, "sample_count": 1}
+    config = {"lookback": lookback, "pred_len": pred_len, "stride": stride,
+              "signal_threshold": signal_threshold, "sampling": sampling}
     runs = run_rolling_forecasts(candles, forecaster, lookback, pred_len, stride, sampling)
     runs = evaluate(runs, candles, pred_len)
     signals = detect_signals(runs, signal_threshold)

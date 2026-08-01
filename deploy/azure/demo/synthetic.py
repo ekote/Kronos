@@ -129,8 +129,8 @@ def aggregate_ohlcv(ticks, bar_seconds: int = 60) -> list[Candle]:
     return candles
 
 
-def generate_session(**kwargs):
-    """Convenience: full Stage 1+2 → (candles, meta)."""
+def generate_session(return_ticks=False, **kwargs):
+    """Convenience: full Stage 1+2 → (candles, meta[, ticks])."""
     shock_minute = kwargs.get("shock_minute", 360)
     ticks, start = generate_ticks(**kwargs)
     candles = [c.as_dict() for c in aggregate_ohlcv(ticks)]
@@ -142,4 +142,6 @@ def generate_session(**kwargs):
         "shock_index": shock_minute,
         "shock_time": candles[shock_minute]["event_time"] if shock_minute < len(candles) else None,
     }
+    if return_ticks:
+        return candles, meta, ticks
     return candles, meta

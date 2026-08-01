@@ -22,6 +22,7 @@ from synthetic import generate_session
 from forecaster import KronosAdapter
 from pipeline import run_pipeline
 from report import build_html
+from kql_emit import write_kql_bundle
 
 
 STAGES = [
@@ -44,6 +45,9 @@ def main():
     ap.add_argument("--lookback", type=int, default=120)
     ap.add_argument("--pred-len", type=int, default=30)
     ap.add_argument("--stride", type=int, default=3)
+    ap.add_argument("--no-kql", action="store_true", help="skip KQL bundle emission")
+    ap.add_argument("--no-tick-kql", action="store_true",
+                    help="emit KQL for forecasts/signals/alerts but not the (large) raw-tick replay")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
@@ -54,7 +58,7 @@ def main():
     narrate("=" * 72 + "\n")
 
     # Stage 1-2: feed + candle building.
-    candles, meta = generate_session()
+    candles, meta, ticks = generate_session(return_ticks=True)
     narrate(f"[1-2] {meta['n_ticks']:,} ticks -> {meta['n_candles']:,} 1m candles "
             f"for {meta['symbol']}; scripted news shock at {meta['shock_time']}")
 
@@ -65,6 +69,7 @@ def main():
     # Stage 3-6: orchestrate, store, evaluate, act.
     result = run_pipeline(candles, meta, forecaster,
                           lookback=args.lookback, pred_len=args.pred_len, stride=args.stride)
+    result["ticks"] = ticks
     s = result["stats"]
     narrate(f"[3-4] {s['n_forecasts']} rolling forecasts "
             f"(lookback={s['lookback']}, horizon={s['pred_len']}m) stored")
@@ -77,12 +82,21 @@ def main():
                 f"{s['detection_latency_min']:.0f} min after the shock "
                 f"(first breach {s['first_alert_time']})")
 
+    # Stage 4/6 as a Fabric-ready artifact: emit the whole pipeline as KQL.
+    kql_meta = None
+    if not args.no_kql:
+        kql_meta = write_kql_bundle(result, args.out, emit_ticks_data=not args.no_tick_kql)
+        total_kb = sum(kql_meta["files"].values()) / 1024
+        narrate(f"[KQL] round-trip bundle -> {kql_meta['dir']} "
+                f"({len(kql_meta['files'])} files, {total_kb:.0f} KB): "
+                f"paste replay_all.kql into a Fabric Eventhouse to reproduce every table")
+
     # Write artifacts.
     json_path = os.path.join(args.out, "demo_result.json")
     with open(json_path, "w") as f:
         json.dump({k: result[k] for k in ("stats", "signals", "drift", "meta", "config")},
                   f, indent=2, default=str)
-    html = build_html(result)
+    html = build_html(result, kql_meta=kql_meta)
     html_path = os.path.join(args.out, "kronos_fabric_demo.html")
     with open(html_path, "w") as f:
         f.write(html)

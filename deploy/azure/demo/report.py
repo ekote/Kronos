@@ -178,8 +178,52 @@ def _guardrail_chart(result):
     </svg>'''
 
 
+def _html_escape(t):
+    return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _fabric_card(result, kql_meta):
+    if not kql_meta:
+        return ""
+    order = ["00_setup.kql", "10_replay_ticks.kql", "15_candles_view.kql", "20_forecasts.kql",
+             "30_signals.kql", "40_model_health_alerts.kql", "90_verify.kql", "replay_all.kql"]
+    chips = "".join(
+        f'<div class="kql-chip"><span class="mono kf">{name}</span>'
+        f'<span class="mono ks">{kql_meta["files"][name]/1024:.1f} KB</span></div>'
+        for name in order if name in kql_meta["files"])
+
+    # A real 2-row snippet from the emitted forecasts.
+    run = result["runs"][0]
+    rid = f'{result["meta"]["symbol"]}-r{run["origin_index"]:05d}'
+    samp = json.dumps(result["config"]["sampling"], separators=(",", ":"))
+    lines = [".set-or-append forecasts <|",
+             "datatable(symbol:string, run_id:string, run_time:datetime, target_time:datetime,",
+             "          open:real, high:real, low:real, close:real, volume:real, amount:real,",
+             "          horizon_step:int, model_version:string, sampling:dynamic)",
+             "["]
+    for f in run["forecast"][:2]:
+        lines.append(
+            f'  "{result["meta"]["symbol"]}","{rid}",datetime({_dt(run["origin_time"]).strftime("%Y-%m-%dT%H:%M:%SZ")}),'
+            f'datetime({_dt(f["target_time"]).strftime("%Y-%m-%dT%H:%M:%SZ")}),'
+            f'{f["open"]},{f["high"]},{f["low"]},{f["close"]},{f["volume"]},{f["amount"]},'
+            f'{f["horizon_step"]},"{kql_meta["model_version"]}",dynamic({samp}),')
+    lines.append("  ...")
+    lines.append("]")
+    snippet = _html_escape("\n".join(lines))
+
+    return f'''<div class="card">
+      <div class="card-head"><div><h2>Fabric-ready — the demo round-trips as KQL</h2>
+        <p>Every stage is emitted as <code>.set-or-append</code> batches against the real Eventhouse
+          schemas. Paste <code>replay_all.kql</code> into a Fabric KQL queryset and the
+          <code>candles_1m</code> materialized view, <code>forecasts</code>, <code>signals</code> and
+          <code>model_health_alerts</code> all rebuild — same tables the production pipeline writes.</p></div></div>
+      <div class="kql-grid">{chips}</div>
+      <pre class="kql-snip"><code>{snippet}</code></pre>
+    </div>'''
+
+
 # ---- page -------------------------------------------------------------------
-def build_html(result) -> str:
+def build_html(result, kql_meta=None) -> str:
     s = result["stats"]
     meta = result["meta"]
     in_regime, crossing = _select_overlays(result)
@@ -233,6 +277,7 @@ def build_html(result) -> str:
 
     shock_h = _hhmm(meta["shock_time"])
     return _TEMPLATE.format(
+        fabric_card=_fabric_card(result, kql_meta),
         engine_cls=("live" if engine_is_real else "warn"),
         engine_badge=engine_badge, engine_label=s["engine_label"],
         symbol=s["symbol"], n_ticks=f"{s['n_ticks']:,}", n_candles=f"{s['n_candles']:,}",
@@ -380,6 +425,16 @@ td {{ padding:7px 10px; border-bottom:1px solid var(--hair); }}
 .stage-arrow {{ display:flex; align-items:center; color:var(--ink-3); font-size:15px; }}
 @media (max-width:900px) {{ .stage-arrow {{ display:none; }} }}
 
+.kql-grid {{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }}
+.kql-chip {{ display:flex; align-items:center; gap:8px; background:var(--surface-2);
+  border:1px solid var(--hair); border-radius:8px; padding:7px 11px; }}
+.kql-chip .kf {{ font-size:12.5px; color:var(--ink); }}
+.kql-chip .ks {{ font-size:11px; color:var(--ink-3); }}
+.kql-snip {{ margin:0; background:var(--surface-2); border:1px solid var(--hair); border-radius:10px;
+  padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12px; line-height:1.5;
+  color:var(--ink-2); }}
+.kql-snip code {{ white-space:pre; }}
+
 .foot {{ margin-top:30px; color:var(--ink-3); font-size:13px; }}
 .foot code {{ font-family:var(--mono); background:var(--surface-2); padding:2px 6px; border-radius:5px;
   border:1px solid var(--hair); color:var(--ink-2); }}
@@ -463,6 +518,8 @@ td {{ padding:7px 10px; border-bottom:1px solid var(--hair); }}
         Azure ML owns the model.</p></div></div>
     <div class="chain">{chain}</div>
   </div>
+
+  {fabric_card}
 
   <p class="foot">Runs fully offline on the Python standard library — the forecaster shown is a transparent
     baseline with the same interface as the model endpoint. Set <code>KRONOS_ENABLE=1</code> (with torch +

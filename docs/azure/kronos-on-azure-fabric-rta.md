@@ -381,6 +381,7 @@ deploy/azure/
     01_raw_and_bronze.kql            # ticks_raw table, ingestion mapping, retention
     02_ohlcv_materialized_views.kql  # candles_1m / candles_5m materialized views
     03_forecast_dashboard_activator.kql  # forecasts table, dashboard & Activator queries
+    04_signals_and_alerts.kql        # signals + model_health_alerts tables & scoreboards
   fabric/notebooks/
     kronos_rt_inference.py           # orchestrator: Eventhouse -> AML endpoint -> Eventhouse
   azureml/
@@ -390,8 +391,22 @@ deploy/azure/
     environment/conda.yml            # serving environment
   infra/
     main.bicep                       # Event Hubs + Key Vault + AML workspace/endpoint skeleton
+  demo/                              # runnable, zero-dependency end-to-end demo
+    synthetic.py                     # tick feed + OHLCV candle aggregation
+    forecaster.py                    # KronosAdapter (real Kronos or baseline)
+    pipeline.py                      # rolling forecasts, signals, drift guardrail
+    kql_emit.py                      # emit every stage as replayable Eventhouse KQL
+    report.py                        # self-contained HTML report
+    run_demo.py                      # narrated runner
 ```
 
 These are **reference scaffolding** to make the design concrete and runnable in
 stages — not a turnkey deployment. Fill in workspace names, capacities, symbol
 universe, and secrets for your environment.
+
+The **demo round-trips through KQL**: `run_demo.py` writes `output/kql/*.kql`
+(`.set-or-append` batches against the schemas above), so you can replay the whole
+synthetic session — `ticks_raw` → `candles_1m` materialized view → `forecasts`,
+`signals`, `model_health_alerts` — into a real Fabric Eventhouse and drive the
+Real-Time Dashboard and Data Activator from it. See
+[`deploy/azure/demo/`](../../deploy/azure/demo/).

@@ -33,6 +33,8 @@ Concrete, staged scaffolding lives under [`deploy/azure/`](../../deploy/azure/):
 | `deploy/azure/fabric/eventhouse/01_raw_and_bronze.kql` | `ticks_raw` table + ingestion mapping + retention/caching |
 | `deploy/azure/fabric/eventhouse/02_ohlcv_materialized_views.kql` | `candles_1m` / `candles_5m` materialized views + model lookback functions |
 | `deploy/azure/fabric/eventhouse/03_forecast_dashboard_activator.kql` | `forecasts` table + dashboard queries + Data Activator signals |
+| `deploy/azure/fabric/eventhouse/04_signals_and_alerts.kql` | `signals` + `model_health_alerts` event-log tables & scoreboards |
+| `deploy/azure/demo/` | Runnable zero-dependency demo that emits every stage as replayable KQL |
 | `deploy/azure/fabric/notebooks/kronos_rt_inference.py` | Orchestrator: Eventhouse → Azure ML endpoint → Eventhouse |
 | `deploy/azure/azureml/score.py` | Endpoint scoring using `KronosPredictor.predict_batch` |
 | `deploy/azure/azureml/endpoint.yml`, `deployment.yml`, `environment/conda.yml` | Managed online endpoint (GPU) |

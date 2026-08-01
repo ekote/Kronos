@@ -1,0 +1,74 @@
+// =============================================================================
+// Kronos on Fabric RTI — action-plane event log: signals + model-health alerts
+// These tables are the durable audit trail that the orchestrator / Data
+// Activator writes when a condition fires (SignalLargeMove / AlertForecastDrift).
+// The demo emits `.set-or-append` batches against exactly these schemas
+// (see deploy/azure/demo/kql_emit.py), so it round-trips into a real Eventhouse.
+// =============================================================================
+
+// --- Momentum signals (Data Activator SignalLargeMove) -----------------------
+.create-merge table signals (
+    symbol:             string,
+    origin_time:        datetime,   // candle the signal was raised on
+    direction:          string,     // "UP" | "DOWN"
+    expected_move_pct:  real,       // forecast move over the horizon
+    realized_move_pct:  real,       // what actually happened (backfilled)
+    hit:                bool,       // realized direction matched
+    model_version:      string
+)
+
+.create-or-alter table signals ingestion json mapping "signals_map"
+```
+[
+  {"column":"symbol",            "path":"$.symbol"},
+  {"column":"origin_time",       "path":"$.origin_time"},
+  {"column":"direction",         "path":"$.direction"},
+  {"column":"expected_move_pct", "path":"$.expected_move_pct"},
+  {"column":"realized_move_pct", "path":"$.realized_move_pct"},
+  {"column":"hit",               "path":"$.hit"},
+  {"column":"model_version",     "path":"$.model_version"}
+]
+```
+
+// --- Model-health alerts (Data Activator AlertForecastDrift) ------------------
+.create-merge table model_health_alerts (
+    symbol:         string,
+    alert_time:     datetime,   // evaluation time the breach was observed
+    kind:           string,     // "drift"
+    smoothed_mape:  real,       // rolling forecast error at the breach
+    band:           real,       // the learned alert band
+    detail:         string      // human-readable note
+)
+
+.create-or-alter table model_health_alerts ingestion json mapping "model_health_alerts_map"
+```
+[
+  {"column":"symbol",        "path":"$.symbol"},
+  {"column":"alert_time",    "path":"$.alert_time"},
+  {"column":"kind",          "path":"$.kind"},
+  {"column":"smoothed_mape", "path":"$.smoothed_mape"},
+  {"column":"band",          "path":"$.band"},
+  {"column":"detail",        "path":"$.detail"}
+]
+```
+
+.alter table signals policy retention softdelete = 90d
+.alter table model_health_alerts policy retention softdelete = 180d
+
+// --- Signal scoreboard (dashboard tile) --------------------------------------
+.create-or-alter function SignalScoreboard(since:timespan) {
+    signals
+    | where origin_time > ago(since)
+    | summarize signals = count(), hits = countif(hit),
+                hit_rate = round(100.0 * countif(hit) / count(), 1)
+      by symbol, direction
+}
+
+// --- Most recent model-health state (Data Activator watches this) ------------
+.create-or-alter function ActiveModelHealth(since:timespan) {
+    model_health_alerts
+    | where alert_time > ago(since)
+    | summarize last_alert = max(alert_time), peak_mape = max(smoothed_mape),
+                band = any(band), breaches = count()
+      by symbol, kind
+}
