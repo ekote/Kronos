@@ -14,6 +14,8 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
   Regenerate with `python deploy/azure/demo/build_deck.py`.
 - **[`slides/solution-deck.pdf`](./slides/solution-deck.pdf)** — the same deck
   exported to PDF (one 1280×720 page per slide).
+- **[`slides/solution-deck-eli5.md`](./slides/solution-deck-eli5.md)** — the PDF
+  explained in the simplest possible words (no jargon), for a non-technical reader.
 - **[`slides/solution-intro.html`](./slides/solution-intro.html)** — just the 3
   intro slides, if you want the short version.
 
