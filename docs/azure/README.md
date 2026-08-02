@@ -16,6 +16,9 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
   exported to PDF (one 1280×720 page per slide).
 - **[`slides/solution-deck-eli5.md`](./slides/solution-deck-eli5.md)** — the PDF
   explained in the simplest possible words (no jargon), for a non-technical reader.
+- **[`slides/solution-deck-seller-guide.md`](./slides/solution-deck-seller-guide.md)** —
+  a field guide for Microsoft sellers/partners: ICP, consumption story, discovery
+  questions, objection handling, and landmines to avoid.
 - **[`slides/solution-intro.html`](./slides/solution-intro.html)** — just the 3
   intro slides, if you want the short version.
 
