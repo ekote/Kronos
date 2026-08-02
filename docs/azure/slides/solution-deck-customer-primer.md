@@ -117,3 +117,7 @@ Step 2 is a low-risk afternoon, not a program.
 
 Bring your engineers for the architecture, and your risk/compliance people early —
 anything that informs financial decisions should have their sign-off from day one.
+
+---
+
+**Learn more:** official docs for every part of this — Kronos ([GitHub](https://github.com/shiyu-coder/Kronos), [paper](https://arxiv.org/abs/2508.02739), [models](https://huggingface.co/NeoQuasar)) and each Azure & Fabric service ([Microsoft Learn](https://learn.microsoft.com/fabric/real-time-intelligence/overview)) — are collected in [`../references.md`](../references.md).

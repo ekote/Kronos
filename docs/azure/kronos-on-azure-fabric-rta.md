@@ -410,3 +410,21 @@ synthetic session — `ticks_raw` → `candles_1m` materialized view → `foreca
 `signals`, `model_health_alerts` — into a real Fabric Eventhouse and drive the
 Real-Time Dashboard and Data Activator from it. See
 [`deploy/azure/demo/`](../../deploy/azure/demo/).
+
+---
+
+## 10. References
+
+Official documentation for every component named above — Kronos (GitHub / Hugging
+Face / arXiv) and each Azure & Fabric service (Microsoft Learn) — is collected,
+with a concept-by-concept mapping, in **[`references.md`](./references.md)**.
+
+Quick links: [Kronos](https://github.com/shiyu-coder/Kronos) ·
+[paper](https://arxiv.org/abs/2508.02739) ·
+[Fabric Real-Time Intelligence](https://learn.microsoft.com/fabric/real-time-intelligence/overview) ·
+[Eventhouse](https://learn.microsoft.com/fabric/real-time-intelligence/eventhouse) ·
+[Materialized views](https://learn.microsoft.com/fabric/real-time-intelligence/materialized-view) ·
+[Data Activator](https://learn.microsoft.com/fabric/real-time-intelligence/data-activator/) ·
+[Azure ML online endpoints](https://learn.microsoft.com/azure/machine-learning/concept-endpoints-online?view=azureml-api-2) ·
+[Event Hubs](https://learn.microsoft.com/azure/event-hubs/) ·
+[OneLake](https://learn.microsoft.com/fabric/onelake/onelake-overview).

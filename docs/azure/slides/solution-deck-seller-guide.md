@@ -132,3 +132,7 @@ script POC) → scope a fine-tune on their data (Azure ML attach).
 4. **Expand** into a fine-tune on their data (Azure ML GPU) and more symbols/users
    (Fabric CU growth).
 5. **Bring a partner** for production hardening (networking, MLOps, compliance).
+
+---
+
+**Learn more:** official docs for every part of this — Kronos ([GitHub](https://github.com/shiyu-coder/Kronos), [paper](https://arxiv.org/abs/2508.02739), [models](https://huggingface.co/NeoQuasar)) and each Azure & Fabric service ([Microsoft Learn](https://learn.microsoft.com/fabric/real-time-intelligence/overview)) — are collected in [`../references.md`](../references.md).

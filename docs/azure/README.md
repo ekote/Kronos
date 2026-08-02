@@ -12,6 +12,8 @@ new to it → the **customer primer** · a Microsoft seller → the **seller gui
 anyone / non-technical → **ELI5**. All four describe the same `solution-deck.pdf`.
 New to the model itself? → **[`slides/what-kronos-does.html`](./slides/what-kronos-does.html)**
 explains what Kronos does (tokenize → predict → decode), independent of Azure.
+Public docs for every component (Microsoft Learn + GitHub/Hugging Face/arXiv),
+mapped concept-by-concept → **[`references.md`](./references.md)**.
 
 - **[`slides/solution-deck.html`](./slides/solution-deck.html)** — the full
   **9-slide deck**: 3 intro slides (the gap → the two-plane architecture → the

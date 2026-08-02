@@ -92,3 +92,7 @@ safer than one that's confidently wrong.
   a promise about real money.
 - "Guessing prices" is never a sure thing. This is a tool to help careful people, with
   a safety alarm built in — not a magic money button. 🚫🪄
+
+---
+
+**Learn more:** official docs for every part of this — Kronos ([GitHub](https://github.com/shiyu-coder/Kronos), [paper](https://arxiv.org/abs/2508.02739), [models](https://huggingface.co/NeoQuasar)) and each Azure & Fabric service ([Microsoft Learn](https://learn.microsoft.com/fabric/real-time-intelligence/overview)) — are collected in [`../references.md`](../references.md).

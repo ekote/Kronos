@@ -106,6 +106,13 @@ tr .name{font-weight:620;}
 .k-up{fill:var(--good);stroke:var(--good);} .k-dn{fill:var(--crit);stroke:var(--crit);}
 .k-fc{fill:none;stroke:var(--accent);} .k-dot{fill:var(--accent);}
 .k-mut{fill:var(--ink-3);stroke:var(--ink-3);}
+.refs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 22px;margin-top:18px;}
+@media (max-width:720px){.refs{grid-template-columns:1fr;}}
+.refs a{font-size:13.5px;color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;
+  padding:3px 0;}
+.refs a:hover{border-bottom-color:var(--accent);}
+.refs .rl{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);grid-column:1/-1;margin-top:4px;}
 </style>
 
 <div class="wrap">
@@ -253,9 +260,26 @@ tr .name{font-weight:620;}
     </div>
   </div>
 
+  <!-- REFERENCES -->
+  <div class="section">
+    <div class="kicker">Learn more — public sources</div>
+    <h2>References</h2>
+    <div class="refs">
+      <span class="rl">Kronos (the model)</span>
+      <a href="https://github.com/shiyu-coder/Kronos">Kronos on GitHub ↗</a>
+      <a href="https://arxiv.org/abs/2508.02739">Paper (arXiv 2508.02739) ↗</a>
+      <a href="https://huggingface.co/NeoQuasar">Models on Hugging Face ↗</a>
+      <span class="rl">Runs on Azure &amp; Microsoft Fabric</span>
+      <a href="https://learn.microsoft.com/fabric/real-time-intelligence/overview">Fabric Real-Time Intelligence ↗</a>
+      <a href="https://learn.microsoft.com/fabric/real-time-intelligence/eventhouse">Eventhouse (KQL) ↗</a>
+      <a href="https://learn.microsoft.com/azure/machine-learning/concept-endpoints-online?view=azureml-api-2">Azure ML online endpoints ↗</a>
+    </div>
+  </div>
+
   <p class="foot">Kronos is open-source (MIT) — models on the Hugging Face Hub, code in this repo
     (<code>model/kronos.py</code>). This page explains the model itself; for how it runs as a live service on
-    Azure &amp; Microsoft Fabric, see the solution deck and architecture docs under <code>docs/azure/</code>.</p>
+    Azure &amp; Microsoft Fabric, see the solution deck and architecture docs under <code>docs/azure/</code>.
+    Full concept-by-concept source list: <code>docs/azure/references.md</code>.</p>
 </div>
 
 </body>
