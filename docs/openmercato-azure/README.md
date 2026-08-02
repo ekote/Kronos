@@ -19,6 +19,12 @@ same real-time loop and model-health guardrail, different data source.
   architecture with both options, the value, and the live demo charts). Regenerate
   with `python deploy/openmercato/build_om_deck.py`.
 
+**Which explainer for whom** (all describe the same deck): a customer new to it →
+the **[customer primer](./slides/openmercato-deck-customer-primer.md)** · a
+Microsoft seller → the **[seller guide](./slides/openmercato-deck-seller-guide.md)** ·
+anyone / non-technical → **[ELI5](./slides/openmercato-deck-eli5.md)** · engineers →
+[architecture.md](./architecture.md).
+
 ## The idea in one picture
 
 ```
