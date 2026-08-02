@@ -7,6 +7,10 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
 
 ## Slides
 
+**Which explainer for whom:** engineers → the architecture doc below · a customer
+new to it → the **customer primer** · a Microsoft seller → the **seller guide** ·
+anyone / non-technical → **ELI5**. All four describe the same `solution-deck.pdf`.
+
 - **[`slides/solution-deck.html`](./slides/solution-deck.html)** — the full
   **9-slide deck**: 3 intro slides (the gap → the two-plane architecture → the
   value) followed by the live demo charts (price/forecast, model-health
@@ -16,6 +20,9 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
   exported to PDF (one 1280×720 page per slide).
 - **[`slides/solution-deck-eli5.md`](./slides/solution-deck-eli5.md)** — the PDF
   explained in the simplest possible words (no jargon), for a non-technical reader.
+- **[`slides/solution-deck-customer-primer.md`](./slides/solution-deck-customer-primer.md)** —
+  for a customer who's heard of Fabric and Kronos and nothing more: places the two
+  names correctly, explains the combined solution, fit, and honest boundaries.
 - **[`slides/solution-deck-seller-guide.md`](./slides/solution-deck-seller-guide.md)** —
   a field guide for Microsoft sellers/partners: ICP, consumption story, discovery
   questions, objection handling, and landmines to avoid.
