@@ -5,6 +5,13 @@ Kronos financial foundation model as a production, streaming forecasting service
 on Microsoft Azure, using **Microsoft Fabric Real-Time Intelligence (RTI/RTA)**
 as the data backbone and **Azure Machine Learning** as the GPU model plane.
 
+## Intro slides
+
+A 3-slide visual intro to the solution (the gap, the two-plane architecture, the
+value) — a standalone HTML deck with keyboard/click navigation and light/dark
+themes: [`slides/solution-intro.html`](./slides/solution-intro.html). Open it in
+a browser and use ← / →.
+
 ## Start here
 
 - **[kronos-on-azure-fabric-rta.md](./kronos-on-azure-fabric-rta.md)** — the full
