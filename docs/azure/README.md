@@ -10,6 +10,8 @@ as the data backbone and **Azure Machine Learning** as the GPU model plane.
 **Which explainer for whom:** engineers → the architecture doc below · a customer
 new to it → the **customer primer** · a Microsoft seller → the **seller guide** ·
 anyone / non-technical → **ELI5**. All four describe the same `solution-deck.pdf`.
+New to the model itself? → **[`slides/what-kronos-does.html`](./slides/what-kronos-does.html)**
+explains what Kronos does (tokenize → predict → decode), independent of Azure.
 
 - **[`slides/solution-deck.html`](./slides/solution-deck.html)** — the full
   **9-slide deck**: 3 intro slides (the gap → the two-plane architecture → the
