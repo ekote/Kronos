@@ -120,26 +120,32 @@ def detect_drift(runs, shock_time, baseline_frac=0.30, band_mult=3.0, smooth_w=5
     base_p90 = base_vals[int(0.9 * (len(base_vals) - 1))]
     band = max(base_p90 * 1.4, base_med * band_mult)
 
-    series, run_len, first_alert = [], 0, None
+    series, run_len, first_alert, shock_alert = [], 0, None, None
     for r, m, sm in zip(scored, raw, smooth):
         breach = sm > band
         run_len = run_len + 1 if breach else 0
         alert = breach and run_len >= sustain
         if alert and first_alert is None:
             first_alert = r["eval_time"]
+        # Detection latency is measured against THE shock: the first sustained
+        # breach at/after the shock time (earlier episodes — e.g. a flash-sale
+        # surge — are real alerts too, but not the shock we're timing).
+        if alert and shock_alert is None and shock_time and r["eval_time"] >= shock_time:
+            shock_alert = r["eval_time"]
         series.append({"eval_time": r["eval_time"], "mape": m,
                        "smoothed": sm, "breach": breach, "alert": alert})
 
+    detected = shock_alert or first_alert
     detection_latency_min = None
-    if first_alert and shock_time:
+    if detected and shock_time:
         detection_latency_min = round(
-            (_dt(first_alert) - _dt(shock_time)).total_seconds() / 60.0, 1)
+            (_dt(detected) - _dt(shock_time)).total_seconds() / 60.0, 1)
 
     return {
         "series": series,
         "baseline_mape": base_med,
         "band": band,
-        "first_alert_time": first_alert,
+        "first_alert_time": detected,
         "detection_latency_min": detection_latency_min,
     }
 
