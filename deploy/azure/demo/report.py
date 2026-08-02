@@ -61,7 +61,7 @@ class Plot:
         return " ".join(f"{self.x(i):.1f},{self.y(v):.1f}" for i, v in pts)
 
 
-def _price_chart(result, in_regime, crossing):
+def _price_chart(result, in_regime, crossing, shock_label="news shock"):
     candles = result["candles"]
     start = _dt(result["meta"]["session_start"])
     shock_idx = result["meta"]["shock_index"]
@@ -93,7 +93,7 @@ def _price_chart(result, in_regime, crossing):
     sx0, sx1 = P.x(shock_idx), P.x(shock_idx + 15)
     shock = (f'<rect x="{sx0:.1f}" y="{P.padt}" width="{sx1-sx0:.1f}" height="{P.h-P.padt-P.padb}" '
              f'class="shock-band"/>'
-             f'<text x="{sx0+4:.1f}" y="{P.padt+14}" class="band-label">news shock '
+             f'<text x="{sx0+4:.1f}" y="{P.padt+14}" class="band-label">{shock_label} '
              f'{_hhmm(candles[shock_idx]["event_time"])}</text>')
 
     # actual close line

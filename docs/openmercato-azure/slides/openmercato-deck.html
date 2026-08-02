@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Open Mercato x Kronos x Azure - Solution Deck</title>
+<style>
+:root{
+  --bg:#F4F5F7; --panel:#FFFFFF; --panel-2:#FAFBFC;
+  --ink:#141A26; --ink-2:#54607A; --ink-3:#8A93A8; --hair:#E4E7ED;
+  --accent:#2E7FD6; --accent-soft:#2E7FD622; --glow:#2E7FD61f;
+  --good:#1F9D63; --warn:#C77A15; --crit:#CC392E; --crit-soft:#CC392E1f;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0B111C; --panel:#131A28; --panel-2:#0F1623;
+  --ink:#EAEEF6; --ink-2:#9DA8BE; --ink-3:#5F6A83; --hair:#222B3C;
+  --accent:#59A6F0; --accent-soft:#59A6F02b; --glow:#59A6F033;
+  --good:#37C08A; --warn:#E0A040; --crit:#E85D51; --crit-soft:#E85D5122;
+}}
+:root[data-theme="light"]{ --bg:#F4F5F7; --panel:#FFFFFF; --panel-2:#FAFBFC;
+  --ink:#141A26; --ink-2:#54607A; --ink-3:#8A93A8; --hair:#E4E7ED; --accent:#2E7FD6;
+  --accent-soft:#2E7FD622; --glow:#2E7FD61f; --good:#1F9D63; --warn:#C77A15; --crit:#CC392E; --crit-soft:#CC392E1f; }
+:root[data-theme="dark"]{ --bg:#0B111C; --panel:#131A28; --panel-2:#0F1623;
+  --ink:#EAEEF6; --ink-2:#9DA8BE; --ink-3:#5F6A83; --hair:#222B3C; --accent:#59A6F0;
+  --accent-soft:#59A6F02b; --glow:#59A6F033; --good:#37C08A; --warn:#E0A040; --crit:#E85D51; --crit-soft:#E85D5122; }
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;}
+.deck{position:fixed;inset:0;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(30px,5vw,80px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .45s ease;overflow:auto;}
+.slide.active{opacity:1;visibility:visible;pointer-events:auto;}
+@media (prefers-reduced-motion:reduce){.slide{transition:none;}}
+.stage{max-width:1140px;width:100%;margin:0 auto;}
+.eyebrow{font-family:var(--mono);font-size:clamp(11px,1.1vw,13px);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);}
+.eyebrow b{color:var(--accent);font-weight:600;}
+h1{font-size:clamp(32px,5.6vw,68px);line-height:1.03;letter-spacing:-.025em;margin:.28em 0 .3em;text-wrap:balance;font-weight:650;}
+h2{font-size:clamp(24px,3.8vw,44px);line-height:1.06;letter-spacing:-.02em;margin:.1em 0 .45em;text-wrap:balance;font-weight:650;}
+.lead{font-size:clamp(15px,1.7vw,21px);line-height:1.5;color:var(--ink-2);max-width:62ch;}
+.u{color:var(--ink);font-weight:600;} .accent{color:var(--accent);}
+.rise{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease;}
+.slide.active .rise{opacity:1;transform:none;}
+.slide.active .d1{transition-delay:.08s;} .slide.active .d2{transition-delay:.16s;}
+.slide.active .d3{transition-delay:.24s;} .slide.active .d4{transition-delay:.32s;}
+@media (prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none;}}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;}
+.chip{font-family:var(--mono);font-size:13px;color:var(--ink-2);background:var(--panel);border:1px solid var(--hair);border-radius:8px;padding:8px 13px;}
+.chip b{color:var(--accent);}
+.lane-label{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.dot-l{width:9px;height:9px;border-radius:3px;background:var(--accent);} .dot-l.ml{background:var(--good);}
+.flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;}
+.node{flex:1 1 150px;background:var(--panel);border:1px solid var(--hair);border-radius:13px;padding:15px;position:relative;overflow:hidden;min-width:130px;}
+.node::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
+.node.ml::before{background:var(--good);}
+.node .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);}
+.node .t{font-size:15px;font-weight:640;margin:5px 0 3px;}
+.node .c{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);line-height:1.35;}
+.node .tag{position:absolute;top:11px;right:11px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);}
+.node.ml .tag{color:var(--good);}
+.arrow{display:flex;align-items:center;color:var(--ink-3);font-size:17px;}
+@media (max-width:820px){.arrow{display:none;}}
+.onelake{margin-top:16px;font-family:var(--mono);font-size:12.5px;color:var(--ink-2);border-top:1px dashed var(--hair);padding-top:13px;} .onelake b{color:var(--ink);}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:6px;}
+@media (max-width:820px){.cards{grid-template-columns:1fr;}}
+.vcard{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:22px 20px;position:relative;overflow:hidden;}
+.vcard::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--ink-3);}
+.vcard.g::before{background:var(--good);} .vcard.w::before{background:var(--warn);} .vcard.c::before{background:var(--crit);}
+.vk{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+.vnum{font-family:var(--mono);font-size:clamp(28px,4vw,42px);font-weight:650;letter-spacing:-.02em;margin:9px 0 4px;font-variant-numeric:tabular-nums;}
+.vcard.g .vnum{color:var(--good);} .vcard.w .vnum{color:var(--warn);} .vcard.c .vnum{color:var(--crit);}
+.vt{font-size:15px;font-weight:620;margin-bottom:5px;} .vp{font-size:13px;color:var(--ink-2);line-height:1.5;}
+.deploy{margin-top:18px;display:flex;align-items:center;gap:13px;flex-wrap:wrap;font-family:var(--mono);font-size:13.5px;color:var(--ink-2);}
+.deploy code{background:var(--panel-2);border:1px solid var(--hair);border-radius:7px;padding:6px 11px;color:var(--accent);}
+.note{margin-top:12px;font-size:11.5px;color:var(--ink-3);}
+.divider .big{font-family:var(--mono);font-size:clamp(46px,8vw,92px);font-weight:650;color:var(--accent);letter-spacing:-.03em;line-height:1;}
+.chart-card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:18px 18px 12px;margin-top:12px;}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.chart-head p{margin:3px 0 0;color:var(--ink-2);font-size:13.5px;max-width:74ch;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);font-family:var(--mono);}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.sw{width:15px;height:0;border-top-width:3px;border-top-style:solid;display:inline-block;}
+.sw.actual{border-color:var(--ink);} .sw.fc{border-color:var(--accent);border-top-style:dashed;}
+.sw.div{height:11px;border:0;width:13px;background:var(--crit-soft);border-left:2px solid var(--crit);border-radius:2px;}
+.chart{width:100%;height:auto;display:block;}
+.grid{stroke:var(--hair);stroke-width:1;} .grid.faint{stroke:var(--hair);opacity:.5;}
+.ytick,.xtick{fill:var(--ink-3);font-family:var(--mono);font-size:11px;} .ytick{text-anchor:end;} .xtick{text-anchor:middle;}
+.actual{fill:none;stroke:var(--ink);stroke-width:1.8;}
+.forecast{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:4 3;} .forecast.good{opacity:.95;}
+.diverge{fill:var(--crit-soft);stroke:none;} .dot-cross{fill:var(--crit);}
+.shock-band{fill:var(--warn);opacity:.10;} .band-label{fill:var(--warn);font-family:var(--mono);font-size:11px;}
+.anno-good{fill:var(--accent);font-family:var(--mono);font-size:11px;text-anchor:middle;}
+.anno-cross{fill:var(--crit);font-family:var(--mono);font-size:11px;text-anchor:end;}
+.alert-line{stroke:var(--crit);stroke-width:1.4;stroke-dasharray:3 3;}
+.alert-anno{fill:var(--crit);font-family:var(--mono);font-size:11.5px;font-weight:600;}
+.mape-raw{fill:none;stroke:var(--ink-3);stroke-width:1;opacity:.55;}
+.mape-smooth{fill:none;stroke:var(--accent);stroke-width:2.2;} .mape-alert{fill:var(--crit);}
+.band-line{stroke:var(--warn);stroke-width:1.4;stroke-dasharray:5 3;}
+.band-txt{fill:var(--warn);font-family:var(--mono);font-size:11px;text-anchor:end;}
+.statrow{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;}
+.stat .v{font-family:var(--mono);font-size:26px;font-weight:650;font-variant-numeric:tabular-nums;}
+.stat .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);}
+.stat.good .v{color:var(--good);} .stat.warn .v{color:var(--warn);} .stat.crit .v{color:var(--crit);}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px;}
+th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:7px 10px;border-bottom:1px solid var(--hair);}
+td{padding:8px 10px;border-bottom:1px solid var(--hair);}
+.mono{font-family:var(--mono);} .num{text-align:right;font-variant-numeric:tabular-nums;}
+.pill{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;}
+.pill.up{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent);}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;}
+@media (max-width:820px){.twocol{grid-template-columns:1fr;}}
+.opt{background:var(--panel);border:1px solid var(--hair);border-radius:13px;padding:18px 20px;}
+.opt h3{font-size:15px;margin:0 0 8px;} .opt p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5;}
+.opt.a{border-top:3px solid var(--accent);} .opt.b{border-top:3px solid var(--good);}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);transition:width .4s ease;z-index:10;}
+.hud{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:16px clamp(22px,5vw,52px);z-index:10;pointer-events:none;}
+.hud .brand{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);}
+.dots{display:flex;gap:8px;pointer-events:auto;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--hair);border:0;padding:0;cursor:pointer;transition:background .3s,transform .3s;}
+.dot.on{background:var(--accent);transform:scale(1.3);}
+.counter{font-family:var(--mono);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;} .counter b{color:var(--ink);}
+.corner{position:fixed;top:20px;right:clamp(22px,5vw,52px);font-family:var(--mono);font-size:11px;color:var(--ink-3);z-index:10;}
+@media print{
+  @page{size:1280px 720px;margin:0;}
+  html,body{overflow:visible;height:auto;background:#fff;}
+  :root{ --bg:#FFFFFF; --panel:#FFFFFF; --panel-2:#FAFBFC; --ink:#141A26; --ink-2:#54607A; --ink-3:#8A93A8;
+    --hair:#E4E7ED; --accent:#2E7FD6; --good:#1F9D63; --warn:#C77A15; --crit:#CC392E;
+    --accent-soft:#2E7FD622; --crit-soft:#CC392E1f; --glow:#2E7FD61f; }
+  .progress,.hud,.corner{display:none!important;}
+  .deck{position:static;}
+  .slide{position:relative;inset:auto;width:1280px;height:720px;opacity:1!important;visibility:visible!important;
+    page-break-after:always;break-after:page;overflow:hidden;transition:none;padding:46px 60px;}
+  .slide:last-child{page-break-after:auto;break-after:auto;}
+  .rise{opacity:1!important;transform:none!important;}
+  .chart-card{max-width:960px;margin:0 auto;} .statrow{margin-top:10px;gap:20px;} .stat .v{font-size:22px;}
+}
+</style></head><body>
+<div class="progress" id="prog"></div>
+<div class="corner">Open Mercato x Kronos x Azure</div>
+<div class="deck" id="deck">
+
+  <section class="slide active" data-i="0">
+    <div class="stage">
+      <div class="eyebrow rise"><b>Open Mercato</b> &nbsp;x&nbsp; Kronos &nbsp;x&nbsp; Azure</div>
+      <h1 class="rise">Your storefront already<br>streams the future.<br><span class="accent">Forecast it. Act on it.</span></h1>
+      <p class="lead rise">Every order in Open Mercato is a live event. Turn that stream into
+        <span class="u">real-time demand forecasts</span> with Kronos on Azure &mdash; and get an
+        <span class="u">automatic alarm</span> the moment the model stops matching reality.</p>
+      <div class="chips rise">
+        <span class="chip"><b>order.*</b> events</span>
+        <span class="chip">GMV / minute</span>
+        <span class="chip">Fabric RTI or Azure-only</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-i="1">
+    <div class="stage">
+      <div class="eyebrow rise">The architecture</div>
+      <h2 class="rise">One event bridge. Then the same real-time loop.</h2>
+      <p class="lead rise" style="max-width:66ch;margin-bottom:18px;">Open Mercato publishes domain events;
+        a small <span class="u">bridge</span> forwards them to Azure. From there it's the markets pattern,
+        retargeted to demand.</p>
+      <div class="rise d1"><div class="lane-label"><span class="dot-l"></span>Fabric / Azure data plane
+        &nbsp;&middot;&nbsp; <span class="dot-l ml"></span>Azure ML model plane</div></div>
+      <div class="flow">
+        <div class="node rise d1"><div class="n">01</div><div class="t">Events</div><div class="c">Open Mercato order.*<br>&rarr; bridge &rarr; Event Hubs</div><div class="tag">Bridge</div></div>
+        <div class="arrow rise d1">&rarr;</div>
+        <div class="node rise d2"><div class="n">02</div><div class="t">Sales bars</div><div class="c">Eventhouse OR ADX<br>gmv_1m view</div><div class="tag">KQL</div></div>
+        <div class="arrow rise d2">&rarr;</div>
+        <div class="node ml rise d3"><div class="n">03</div><div class="t">Forecast</div><div class="c">Kronos on an<br>Azure ML endpoint</div><div class="tag">Azure ML</div></div>
+        <div class="arrow rise d3">&rarr;</div>
+        <div class="node rise d4"><div class="n">04</div><div class="t">Act</div><div class="c">Dashboard + alerts<br>&rarr; back into Mercato</div><div class="tag">Activator</div></div>
+      </div>
+      <div class="twocol">
+        <div class="opt a rise d3"><h3>Option A &middot; Microsoft Fabric RTI</h3><p>Eventstream &rarr; Eventhouse &rarr;
+          Real-Time Dashboard &rarr; Data Activator. No-code, governed, one platform.</p></div>
+        <div class="opt b rise d4"><h3>Option B &middot; Azure-only</h3><p>Event Hubs &rarr; Azure Data Explorer &rarr;
+          Azure Functions &rarr; Monitor. <span class="u">Same KQL scripts</span> &mdash; ADX and Eventhouse both speak it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-i="2">
+    <div class="stage">
+      <div class="eyebrow rise">What it delivers</div>
+      <h2 class="rise">Forecast demand &mdash; and know the instant it breaks.</h2>
+      <div class="cards">
+        <div class="vcard g rise d1"><div class="vk">Demand you can trust</div><div class="vnum">~70.0%</div>
+          <div class="vt">Directional accuracy</div><div class="vp">30-min GMV horizon, in-regime, at ~2.76% median error.
+            Surges become <b>signals</b> &mdash; pre-stock, pre-scale.</div></div>
+        <div class="vcard w rise d2"><div class="vk">Honest about limits</div><div class="vnum">0</div>
+          <div class="vt">Outages predicted</div><div class="vp">No model foresees a checkout outage or a viral spike.
+            The forecast keeps projecting normal demand &mdash; as it should.</div></div>
+        <div class="vcard c rise d3"><div class="vk">The guardrail</div><div class="vnum">~5 min</div>
+          <div class="vt">To auto-detect the break</div><div class="vp">Forecast-vs-reality error breaches its learned band
+            and fires automatically &mdash; a stockout, outage or fraud wave, flagged fast.</div></div>
+      </div>
+      <div class="deploy rise d4"><span>Events &rarr; forecast &rarr; act, one managed loop.</span>
+        <code>run_openmercato_demo.py</code><span>runs it end-to-end.</span></div>
+    </div>
+  </section>
+
+  <section class="slide divider" data-i="3">
+    <div class="stage">
+      <div class="eyebrow rise">Live demo</div>
+      <div class="big rise">One store-day.</div>
+      <p class="lead rise d1" style="margin-top:18px;">A synthetic Open Mercato tenant <b>store_hydra</b>:
+        <span class="u">66,401 order events &rarr; 540 sales bars</span>, a Kronos forecast every minute
+        (140 runs, 30-min horizon), a <b>flash sale</b>, and a <b>checkout outage</b>. The next
+        slides are the real output.</p>
+      <div class="note rise d2">Fixed-seed synthetic data &mdash; illustrative of the loop, not a live-store
+        performance claim.</div>
+    </div>
+  </section>
+
+  <section class="slide" data-i="4">
+    <div class="stage">
+      <div class="chart-card">
+        <div class="chart-head">
+          <div><h2 style="font-size:22px;margin:0 0 2px;">GMV / minute &mdash; actual vs forecast</h2>
+            <p>Kronos tracks demand in-regime; the forecast issued just before the <b>14:30</b> checkout
+              outage (red divergence) is exactly what the guardrail is built to catch.</p></div>
+          <div class="legend"><span><i class="sw actual"></i>actual GMV</span>
+            <span><i class="sw fc"></i>forecast</span><span><i class="sw div"></i>error</span></div>
+        </div>
+        <svg viewBox="0 0 1000 430" class="chart" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="64.0" y1="24" x2="64.0" y2="384" class="grid faint"/><text x="64.0" y="402.0" class="xtick">08:00</text><line x1="166.0" y1="24" x2="166.0" y2="384" class="grid faint"/><text x="166.0" y="402.0" class="xtick">09:00</text><line x1="267.9" y1="24" x2="267.9" y2="384" class="grid faint"/><text x="267.9" y="402.0" class="xtick">10:00</text><line x1="369.9" y1="24" x2="369.9" y2="384" class="grid faint"/><text x="369.9" y="402.0" class="xtick">11:00</text><line x1="471.9" y1="24" x2="471.9" y2="384" class="grid faint"/><text x="471.9" y="402.0" class="xtick">12:00</text><line x1="573.8" y1="24" x2="573.8" y2="384" class="grid faint"/><text x="573.8" y="402.0" class="xtick">13:00</text><line x1="675.8" y1="24" x2="675.8" y2="384" class="grid faint"/><text x="675.8" y="402.0" class="xtick">14:00</text><line x1="777.8" y1="24" x2="777.8" y2="384" class="grid faint"/><text x="777.8" y="402.0" class="xtick">15:00</text><line x1="879.7" y1="24" x2="879.7" y2="384" class="grid faint"/><text x="879.7" y="402.0" class="xtick">16:00</text><line x1="64" y1="384.0" x2="980" y2="384.0" class="grid"/><line x1="64" y1="294.0" x2="980" y2="294.0" class="grid"/><line x1="64" y1="204.0" x2="980" y2="204.0" class="grid"/><line x1="64" y1="114.0" x2="980" y2="114.0" class="grid"/><line x1="64" y1="24.0" x2="980" y2="24.0" class="grid"/>
+      <rect x="726.8" y="24" width="25.5" height="360" class="shock-band"/><text x="730.8" y="38" class="band-label">checkout outage 14:30</text><polygon points="721.7,160.0 723.4,159.8 725.1,159.6 726.8,159.5 728.5,159.3 730.2,159.1 731.9,159.0 733.6,158.8 735.3,158.6 737.0,158.4 738.7,158.3 740.4,158.1 742.1,157.9 743.8,157.7 745.5,157.6 747.2,157.4 748.9,157.2 750.6,157.0 752.3,156.8 754.0,156.7 755.7,156.5 757.4,156.3 759.1,156.1 760.8,156.0 762.5,155.8 764.2,155.6 765.9,155.4 767.6,155.3 769.3,155.1 771.0,154.9 771.0,164.7 769.3,164.2 767.6,154.8 765.9,161.2 764.2,155.9 762.5,161.7 760.8,162.1 759.1,159.4 757.4,166.6 755.7,171.3 754.0,161.3 752.3,165.5 750.6,355.6 748.9,357.5 747.2,356.8 745.5,357.9 743.8,355.4 742.1,356.8 740.4,356.6 738.7,359.2 737.0,357.0 735.3,357.2 733.6,357.0 731.9,358.2 730.2,357.6 728.5,357.9 726.8,356.4 725.1,157.4 723.4,156.1 721.7,163.0" class="diverge"/><polyline points="64.0,248.0 65.7,252.1 67.4,256.4 69.1,252.1 70.8,251.2 72.5,247.8 74.2,247.2 75.9,246.0 77.6,242.6 79.3,241.4 81.0,244.0 82.7,243.6 84.4,242.4 86.1,242.5 87.8,240.3 89.5,246.0 91.2,242.8 92.9,243.6 94.6,244.1 96.3,238.6 98.0,243.6 99.7,241.0 101.4,234.2 103.1,238.8 104.8,236.5 106.5,236.2 108.2,233.7 109.9,234.0 111.6,229.1 113.3,233.3 115.0,231.6 116.7,232.2 118.4,234.3 120.1,234.2 121.8,235.9 123.5,236.3 125.2,238.0 126.9,238.3 128.6,237.5 130.3,238.4 132.0,236.4 133.7,232.6 135.4,231.9 137.1,232.7 138.8,234.6 140.5,231.2 142.2,234.1 143.9,233.9 145.6,232.6 147.3,227.5 149.0,236.2 150.7,233.1 152.4,232.9 154.1,226.3 155.8,227.5 157.5,235.3 159.2,228.5 160.9,228.6 162.6,223.1 164.3,223.7 166.0,227.6 167.7,225.6 169.4,223.9 171.1,222.2 172.8,230.2 174.5,226.8 176.2,228.2 177.9,227.3 179.6,224.6 181.3,224.4 183.0,224.5 184.7,221.3 186.4,216.6 188.1,218.2 189.8,215.3 191.5,216.7 193.2,214.6 194.9,219.1 196.6,214.8 198.3,215.9 200.0,216.2 201.7,213.5 203.4,213.0 205.1,214.4 206.8,218.4 208.5,209.8 210.2,215.5 211.9,212.0 213.6,223.3 215.3,216.7 216.9,215.7 218.6,215.8 220.3,220.4 222.0,218.8 223.7,219.7 225.4,216.7 227.1,219.8 228.8,217.0 230.5,222.6 232.2,223.4 233.9,221.9 235.6,219.8 237.3,216.2 239.0,211.1 240.7,213.1 242.4,213.7 244.1,209.7 245.8,209.3 247.5,210.6 249.2,210.6 250.9,204.3 252.6,208.2 254.3,207.7 256.0,207.8 257.7,207.2 259.4,210.2 261.1,207.5 262.8,205.1 264.5,204.0 266.2,210.4 267.9,205.2 269.6,207.6 271.3,206.9 273.0,205.3 274.7,202.3 276.4,206.7 278.1,201.1 279.8,204.6 281.5,208.3 283.2,203.6 284.9,201.9 286.6,201.3 288.3,203.5 290.0,208.8 291.7,210.8 293.4,205.6 295.1,205.2 296.8,209.0 298.5,203.3 300.2,199.7 301.9,205.0 303.6,209.0 305.3,205.9 307.0,207.5 308.7,207.4 310.4,207.4 312.1,205.8 313.8,204.1 315.5,213.4 317.2,208.2 318.9,212.5 320.6,207.4 322.3,213.3 324.0,210.4 325.7,199.3 327.4,202.7 329.1,204.7 330.8,209.2 332.5,205.9 334.2,200.5 335.9,200.4 337.6,203.3 339.3,199.8 341.0,201.6 342.7,197.9 344.4,194.7 346.1,198.7 347.8,200.7 349.5,203.7 351.2,196.5 352.9,205.2 354.6,199.0 356.3,198.7 358.0,202.8 359.7,204.4 361.4,200.3 363.1,200.8 364.8,198.2 366.5,193.1 368.2,203.0 369.9,201.6 371.6,201.3 373.3,202.4 375.0,206.3 376.7,205.5 378.4,206.5 380.1,201.3 381.8,200.6 383.5,201.5 385.2,204.1 386.9,204.8 388.6,201.5 390.3,200.5 392.0,199.2 393.7,197.9 395.4,196.5 397.1,193.0 398.8,198.3 400.5,196.5 402.2,196.6 403.9,186.0 405.6,192.2 407.3,197.1 409.0,194.8 410.7,199.9 412.4,192.0 414.1,190.8 415.8,187.3 417.5,189.1 419.2,192.4 420.9,194.3 422.6,194.7 424.3,191.4 426.0,189.2 427.7,187.0 429.4,194.4 431.1,189.0 432.8,185.4 434.5,186.1 436.2,183.7 437.9,184.6 439.6,182.6 441.3,182.7 443.0,182.3 444.7,182.4 446.4,178.4 448.1,181.8 449.8,181.4 451.5,173.7 453.2,176.7 454.9,176.3 456.6,177.2 458.3,178.2 460.0,186.0 461.7,177.8 463.4,180.3 465.1,174.3 466.8,177.8 468.5,176.4 470.2,175.7 471.9,178.6 473.6,178.1 475.3,171.9 477.0,179.3 478.7,177.6 480.4,176.5 482.1,179.9 483.8,176.2 485.5,175.6 487.2,179.3 488.9,170.2 490.6,175.0 492.3,171.5 494.0,174.6 495.7,174.9 497.4,174.2 499.1,178.9 500.8,177.3 502.5,175.7 504.2,182.1 505.9,180.5 507.6,179.0 509.3,175.8 511.0,183.0 512.7,179.3 514.4,179.1 516.1,181.1 517.8,179.9 519.5,184.0 521.2,179.5 522.8,182.0 524.5,177.7 526.2,183.4 527.9,182.8 529.6,176.1 531.3,175.9 533.0,176.7 534.7,176.4 536.4,177.7 538.1,175.4 539.8,179.2 541.5,180.8 543.2,178.2 544.9,179.0 546.6,175.4 548.3,54.9 550.0,55.5 551.7,56.0 553.4,53.1 555.1,49.7 556.8,48.8 558.5,56.1 560.2,53.9 561.9,50.0 563.6,50.7 565.3,50.2 567.0,51.9 568.7,53.6 570.4,49.3 572.1,63.2 573.8,54.3 575.5,58.4 577.2,62.0 578.9,64.2 580.6,67.5 582.3,194.5 584.0,193.8 585.7,195.4 587.4,193.3 589.1,190.6 590.8,193.9 592.5,191.7 594.2,194.4 595.9,192.5 597.6,191.2 599.3,192.7 601.0,191.2 602.7,192.8 604.4,190.1 606.1,192.7 607.8,190.8 609.5,187.1 611.2,190.1 612.9,190.0 614.6,187.9 616.3,186.8 618.0,187.7 619.7,188.4 621.4,184.9 623.1,187.6 624.8,186.0 626.5,183.4 628.2,184.9 629.9,184.7 631.6,176.8 633.3,177.2 635.0,181.6 636.7,178.0 638.4,178.6 640.1,178.4 641.8,185.5 643.5,186.3 645.2,186.8 646.9,181.1 648.6,186.9 650.3,181.0 652.0,185.6 653.7,186.4 655.4,181.5 657.1,183.8 658.8,181.4 660.5,179.1 662.2,180.2 663.9,179.4 665.6,187.9 667.3,183.9 669.0,183.7 670.7,181.7 672.4,181.4 674.1,183.2 675.8,178.5 677.5,182.9 679.2,180.5 680.9,178.0 682.6,179.9 684.3,175.0 686.0,177.1 687.7,175.8 689.4,172.5 691.1,172.6 692.8,170.7 694.5,165.9 696.2,167.9 697.9,170.6 699.6,169.7 701.3,166.4 703.0,168.1 704.7,167.9 706.4,164.2 708.1,172.5 709.8,170.8 711.5,163.9 713.2,163.0 714.9,155.6 716.6,157.4 718.3,158.2 720.0,160.2 721.7,163.0 723.4,156.1 725.1,157.4 726.8,356.4 728.5,357.9 730.2,357.6 731.9,358.2 733.6,357.0 735.3,357.2 737.0,357.0 738.7,359.2 740.4,356.6 742.1,356.8 743.8,355.4 745.5,357.9 747.2,356.8 748.9,357.5 750.6,355.6 752.3,165.5 754.0,161.3 755.7,171.3 757.4,166.6 759.1,159.4 760.8,162.1 762.5,161.7 764.2,155.9 765.9,161.2 767.6,154.8 769.3,164.2 771.0,164.7 772.7,165.3 774.4,168.2 776.1,165.4 777.8,171.0 779.5,174.9 781.2,170.3 782.9,177.2 784.6,178.0 786.3,175.2 788.0,181.7 789.7,179.7 791.4,186.9 793.1,180.1 794.8,176.6 796.5,181.8 798.2,184.8 799.9,185.8 801.6,187.4 803.3,182.5 805.0,186.4 806.7,185.9 808.4,184.5 810.1,184.5 811.8,187.9 813.5,183.6 815.2,184.7 816.9,189.5 818.6,188.5 820.3,189.6 822.0,190.9 823.7,191.5 825.4,188.2 827.1,193.9 828.7,191.0 830.4,194.9 832.1,196.0 833.8,195.5 835.5,195.4 837.2,196.2 838.9,191.5 840.6,201.0 842.3,200.1 844.0,197.3 845.7,199.7 847.4,203.6 849.1,198.4 850.8,201.7 852.5,199.7 854.2,202.1 855.9,198.5 857.6,200.4 859.3,197.6 861.0,201.7 862.7,197.5 864.4,200.0 866.1,199.7 867.8,195.5 869.5,198.8 871.2,202.0 872.9,196.1 874.6,194.9 876.3,199.0 878.0,198.1 879.7,197.7 881.4,203.3 883.1,202.4 884.8,199.3 886.5,206.8 888.2,207.4 889.9,205.7 891.6,199.5 893.3,204.0 895.0,202.1 896.7,205.1 898.4,201.5 900.1,206.2 901.8,201.8 903.5,210.1 905.2,209.7 906.9,209.7 908.6,207.5 910.3,203.1 912.0,207.5 913.7,208.4 915.4,211.7 917.1,207.9 918.8,206.2 920.5,207.1 922.2,207.6 923.9,199.4 925.6,201.8 927.3,203.9 929.0,204.6 930.7,204.5 932.4,207.2 934.1,206.0 935.8,205.2 937.5,209.5 939.2,203.4 940.9,208.1 942.6,204.5 944.3,204.0 946.0,209.6 947.7,203.3 949.4,201.8 951.1,204.7 952.8,203.1 954.5,199.6 956.2,203.0 957.9,206.6 959.6,204.1 961.3,205.4 963.0,209.6 964.7,205.3 966.4,210.0 968.1,208.1 969.8,207.5 971.5,212.1 973.2,209.9 974.9,211.1 976.6,203.6 978.3,210.9 980.0,212.3" class="actual"/><polyline points="441.3,182.9 443.0,182.4 444.7,182.1 446.4,181.8 448.1,181.5 449.8,181.2 451.5,180.9 453.2,180.6 454.9,180.2 456.6,179.9 458.3,179.6 460.0,179.3 461.7,179.0 463.4,178.7 465.1,178.4 466.8,178.1 468.5,177.7 470.2,177.4 471.9,177.1 473.6,176.8 475.3,176.5 477.0,176.2 478.7,175.9 480.4,175.5 482.1,175.2 483.8,174.9 485.5,174.6 487.2,174.3 488.9,173.9 490.6,173.6" class="forecast good"/><polyline points="721.7,160.0 723.4,159.8 725.1,159.6 726.8,159.5 728.5,159.3 730.2,159.1 731.9,159.0 733.6,158.8 735.3,158.6 737.0,158.4 738.7,158.3 740.4,158.1 742.1,157.9 743.8,157.7 745.5,157.6 747.2,157.4 748.9,157.2 750.6,157.0 752.3,156.8 754.0,156.7 755.7,156.5 757.4,156.3 759.1,156.1 760.8,156.0 762.5,155.8 764.2,155.6 765.9,155.4 767.6,155.3 769.3,155.1 771.0,154.9" class="forecast cross"/><text x="466.8" y="163.6" class="anno-good">in-regime forecast tracks</text><circle cx="771.0" cy="154.9" r="3.5" class="dot-cross"/><text x="765.0" y="146.9" class="anno-cross">forecast held up — reality didn't</text><line x1="735.3" y1="24" x2="735.3" y2="384" class="alert-line"/><text x="740.3" y="54" class="alert-anno">◆ guardrail auto-detect 14:35 (+5m)</text>
+      <text x="56" y="387.0" class="ytick">297</text><text x="56" y="297.0" class="ytick">3,644</text><text x="56" y="207.0" class="ytick">6,991</text><text x="56" y="117.0" class="ytick">10,338</text><text x="56" y="27.0" class="ytick">13,684</text>
+    </svg>
+      </div>
+      <div class="statrow">
+        <div class="stat good"><div class="v">70.0%</div><div class="k">Directional accuracy</div></div>
+        <div class="stat"><div class="v">2.76%</div><div class="k">Median error (MAPE)</div></div>
+        <div class="stat good"><div class="v">61.1%</div><div class="k">Signal hit-rate &middot; 95</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-i="5">
+    <div class="stage">
+      <div class="chart-card">
+        <div class="chart-head">
+          <div><h2 style="font-size:22px;margin:0 0 2px;">Model-health guardrail</h2>
+            <p>Rolling forecast error vs a band learned from calm trading. The outage pushes error far past it;
+              the sustained breach is the auto-detection. Band 7.85%.</p></div>
+          <div class="legend"><span><i class="sw" style="border-color:var(--accent)"></i>error</span>
+            <span><i class="sw" style="border-color:var(--warn);border-top-style:dashed"></i>band</span>
+            <span style="color:var(--crit)">&#9679; breach</span></div>
+        </div>
+        <svg viewBox="0 0 1000 240" class="chart" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="64" y1="200.0" x2="980" y2="200.0" class="grid"/><text x="56" y="203.0" class="ytick">0.0%</text><line x1="64" y1="140.0" x2="980" y2="140.0" class="grid"/><text x="56" y="143.0" class="ytick">104.2%</text><line x1="64" y1="80.0" x2="980" y2="80.0" class="grid"/><text x="56" y="83.0" class="ytick">208.3%</text><line x1="64" y1="20.0" x2="980" y2="20.0" class="grid"/><text x="56" y="23.0" class="ytick">312.5%</text><line x1="726.8" y1="20" x2="726.8" y2="200" class="alert-line"/><polyline points="358.0,199.1 363.1,199.0 368.2,198.6 373.3,197.8 378.4,198.3 383.5,198.8 388.6,198.6 393.7,197.7 398.8,198.2 403.9,199.0 409.0,199.0 414.1,198.8 419.2,198.9 424.3,198.9 429.4,197.8 434.5,198.7 439.6,197.6 444.7,198.5 449.8,198.3 454.9,198.9 460.0,198.1 465.1,198.6 470.2,198.3 475.3,198.0 480.4,197.5 485.5,199.3 490.6,199.4 495.7,199.4 500.8,199.3 505.9,198.5 511.0,198.7 516.1,198.4 521.2,198.3 526.2,197.4 531.3,198.5 536.4,198.1 541.5,197.6 546.6,197.7 551.7,196.8 556.8,195.4 561.9,193.4 567.0,191.3 572.1,189.5 577.2,187.2 582.3,186.3 587.4,185.5 592.5,184.7 597.6,184.4 602.7,176.1 607.8,170.1 612.9,166.0 618.0,163.0 623.1,162.4 628.2,158.4 633.3,198.9 638.4,198.7 643.5,198.8 648.6,198.6 653.7,198.0 658.8,198.2 663.9,198.5 669.0,198.7 674.1,198.9 679.2,199.1 684.3,198.3 689.4,198.8 694.5,198.2 699.6,197.5 704.7,197.1 709.8,198.1 714.9,198.0 720.0,196.6 725.1,196.2 730.2,167.7 735.3,137.2 740.4,105.4 745.5,71.4 750.6,43.3 755.7,41.6 760.8,43.8 765.9,29.7 771.0,34.7 776.1,32.0 781.2,166.8 786.3,162.8 791.4,158.9 796.5,153.9 801.6,149.6 806.7,197.4 811.8,198.8 816.9,198.4 822.0,198.6 827.1,198.1 832.1,198.7 837.2,195.7 842.3,198.5 847.4,196.8 852.5,197.9 857.6,197.3 862.7,197.7 867.8,197.9 872.9,198.1 878.0,198.9 883.1,199.3 888.2,199.1 893.3,199.1 898.4,198.4 903.5,199.2 908.6,199.1 913.7,198.8 918.8,197.7 923.9,197.9 929.0,198.5 934.1,199.1 939.2,198.3 944.3,198.9 949.4,198.9 954.5,197.1 959.6,197.8 964.7,197.4 969.8,198.0 974.9,199.0 980.0,184.8" class="mape-raw"/><polyline points="358.0,199.1 363.1,199.0 368.2,198.9 373.3,198.6 378.4,198.6 383.5,198.5 388.6,198.4 393.7,198.3 398.8,198.3 403.9,198.4 409.0,198.5 414.1,198.5 419.2,198.8 424.3,198.9 429.4,198.7 434.5,198.6 439.6,198.4 444.7,198.3 449.8,198.2 454.9,198.4 460.0,198.3 465.1,198.5 470.2,198.4 475.3,198.4 480.4,198.1 485.5,198.3 490.6,198.5 495.7,198.7 500.8,199.0 505.9,199.2 511.0,199.1 516.1,198.9 521.2,198.6 526.2,198.3 531.3,198.3 536.4,198.1 541.5,198.0 546.6,197.9 551.7,197.7 556.8,197.1 561.9,196.2 567.0,194.9 572.1,193.3 577.2,191.4 582.3,189.5 587.4,188.0 592.5,186.6 597.6,185.6 602.7,183.4 607.8,180.2 612.9,176.3 618.0,171.9 623.1,167.5 628.2,164.0 633.3,169.7 638.4,176.3 643.5,183.4 648.6,190.7 653.7,198.6 658.8,198.5 663.9,198.4 669.0,198.4 674.1,198.5 679.2,198.7 684.3,198.7 689.4,198.8 694.5,198.7 699.6,198.4 704.7,198.0 709.8,197.9 714.9,197.8 720.0,197.4 725.1,197.2 730.2,191.3 735.3,179.1 740.4,160.6 745.5,135.6 750.6,105.0 755.7,79.8 760.8,61.1 765.9,46.0 771.0,38.6 776.1,36.4 781.2,61.4 786.3,85.2 791.4,111.0 796.5,134.9 801.6,158.4 806.7,164.5 811.8,171.7 816.9,179.6 822.0,188.6 827.1,198.3 832.1,198.5 837.2,197.9 842.3,197.9 847.4,197.6 852.5,197.6 857.6,197.3 862.7,197.7 867.8,197.5 872.9,197.8 878.0,198.0 883.1,198.4 888.2,198.7 893.3,198.9 898.4,199.0 903.5,199.0 908.6,199.0 913.7,198.9 918.8,198.6 923.9,198.5 929.0,198.4 934.1,198.4 939.2,198.3 944.3,198.6 949.4,198.8 954.5,198.5 959.6,198.2 964.7,198.0 969.8,197.8 974.9,197.9 980.0,195.4" class="mape-smooth"/><line x1="64" y1="195.5" x2="980" y2="195.5" class="band-line"/><text x="980.0" y="189.5" class="band-txt">alert band 7.85%</text><circle cx="572.1" cy="193.3" r="2.6" class="mape-alert"/><circle cx="577.2" cy="191.4" r="2.6" class="mape-alert"/><circle cx="582.3" cy="189.5" r="2.6" class="mape-alert"/><circle cx="587.4" cy="188.0" r="2.6" class="mape-alert"/><circle cx="592.5" cy="186.6" r="2.6" class="mape-alert"/><circle cx="597.6" cy="185.6" r="2.6" class="mape-alert"/><circle cx="602.7" cy="183.4" r="2.6" class="mape-alert"/><circle cx="607.8" cy="180.2" r="2.6" class="mape-alert"/><circle cx="612.9" cy="176.3" r="2.6" class="mape-alert"/><circle cx="618.0" cy="171.9" r="2.6" class="mape-alert"/><circle cx="623.1" cy="167.5" r="2.6" class="mape-alert"/><circle cx="628.2" cy="164.0" r="2.6" class="mape-alert"/><circle cx="633.3" cy="169.7" r="2.6" class="mape-alert"/><circle cx="638.4" cy="176.3" r="2.6" class="mape-alert"/><circle cx="643.5" cy="183.4" r="2.6" class="mape-alert"/><circle cx="648.6" cy="190.7" r="2.6" class="mape-alert"/><circle cx="735.3" cy="179.1" r="2.6" class="mape-alert"/><circle cx="740.4" cy="160.6" r="2.6" class="mape-alert"/><circle cx="745.5" cy="135.6" r="2.6" class="mape-alert"/><circle cx="750.6" cy="105.0" r="2.6" class="mape-alert"/><circle cx="755.7" cy="79.8" r="2.6" class="mape-alert"/><circle cx="760.8" cy="61.1" r="2.6" class="mape-alert"/><circle cx="765.9" cy="46.0" r="2.6" class="mape-alert"/><circle cx="771.0" cy="38.6" r="2.6" class="mape-alert"/><circle cx="776.1" cy="36.4" r="2.6" class="mape-alert"/><circle cx="781.2" cy="61.4" r="2.6" class="mape-alert"/><circle cx="786.3" cy="85.2" r="2.6" class="mape-alert"/><circle cx="791.4" cy="111.0" r="2.6" class="mape-alert"/><circle cx="796.5" cy="134.9" r="2.6" class="mape-alert"/><circle cx="801.6" cy="158.4" r="2.6" class="mape-alert"/><circle cx="806.7" cy="164.5" r="2.6" class="mape-alert"/><circle cx="811.8" cy="171.7" r="2.6" class="mape-alert"/><circle cx="816.9" cy="179.6" r="2.6" class="mape-alert"/><circle cx="822.0" cy="188.6" r="2.6" class="mape-alert"/>
+    </svg>
+      </div>
+      <div class="statrow">
+        <div class="stat crit"><div class="v">+5 min</div><div class="k">To auto-detect the outage</div></div>
+        <div class="stat"><div class="v">14:30</div><div class="k">Checkout outage</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-i="6">
+    <div class="stage">
+      <div class="eyebrow rise">Act on it</div>
+      <h2 class="rise">A flash sale becomes a signal.</h2>
+      <p class="lead rise d1" style="max-width:70ch;">Data Activator raises a demand signal when the forecast
+        expects a large move &mdash; a surge to pre-stock and pre-scale for, a drop to investigate. Sample of the
+        flash-sale surge (of 95 signals @ 61.1% hit).</p>
+      <table class="rise d2"><thead><tr><th>Time</th><th>Call</th><th class="num">Expected</th>
+        <th class="num">Realized</th><th>Result</th></tr></thead><tbody><tr><td class="mono">12:59</td><td><span class="pill up">UP</span></td><td class="mono num">+15.0%</td><td class="mono num">-37.8%</td><td>&middot; miss</td></tr><tr><td class="mono">13:02</td><td><span class="pill up">UP</span></td><td class="mono num">+15.7%</td><td class="mono num">-37.2%</td><td>&middot; miss</td></tr><tr><td class="mono">14:23</td><td><span class="pill up">UP</span></td><td class="mono num">+2.7%</td><td class="mono num">-2.4%</td><td>&middot; miss</td></tr><tr><td class="mono">14:26</td><td><span class="pill up">UP</span></td><td class="mono num">+2.3%</td><td class="mono num">-2.0%</td><td>&middot; miss</td></tr><tr><td class="mono">14:29</td><td><span class="pill up">UP</span></td><td class="mono num">+2.8%</td><td class="mono num">-3.4%</td><td>&middot; miss</td></tr><tr><td class="mono">15:05</td><td><span class="pill up">UP</span></td><td class="mono num">+2.3%</td><td class="mono num">-9.7%</td><td>&middot; miss</td></tr><tr><td class="mono">16:29</td><td><span class="pill up">UP</span></td><td class="mono num">+52.0%</td><td class="mono num">-4.1%</td><td>&middot; miss</td></tr></tbody></table>
+    </div>
+  </section>
+
+  <section class="slide divider" data-i="7">
+    <div class="stage">
+      <div class="eyebrow rise">In one line</div>
+      <h1 class="rise" style="font-size:clamp(28px,4.6vw,56px);">Orders &rarr; forecast &rarr; act.<br>
+        <span class="accent">One loop, on Fabric or Azure.</span></h1>
+      <div class="deploy rise d1" style="font-size:15px;"><span>Replays into Fabric Eventhouse or Azure Data Explorer:</span>
+        <code>replay_all.kql</code></div>
+      <p class="note rise d2">Kronos runs on commerce <span class="u">sales bars</span> (fine-tune for accuracy);
+        the durable value is the real-time loop + guardrail. Not a Microsoft or Open Mercato product.</p>
+    </div>
+  </section>
+
+</div>
+<div class="hud"><div class="brand">Open Mercato x Kronos x Azure</div>
+  <div class="dots" id="dots"></div><div class="counter"><b id="cur">01</b> / 08</div></div>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var dotsWrap=document.getElementById('dots'),prog=document.getElementById('prog'),cur=document.getElementById('cur');
+  var i=0,n=slides.length;
+  slides.forEach(function(_,k){var b=document.createElement('button');b.className='dot'+(k===0?' on':'');
+    b.setAttribute('aria-label','Slide '+(k+1));b.onclick=function(e){e.stopPropagation();show(k);};dotsWrap.appendChild(b);});
+  var dots=[].slice.call(dotsWrap.children);
+  function show(k){i=(k+n)%n;slides.forEach(function(s,x){s.classList.toggle('active',x===i);});
+    dots.forEach(function(d,x){d.classList.toggle('on',x===i);});prog.style.width=((i+1)/n*100)+'%';cur.textContent=('0'+(i+1)).slice(-2);}
+  show(0);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){show(i+1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(i-1);e.preventDefault();}
+    else if(e.key==='Home'){show(0);}else if(e.key==='End'){show(n-1);}});
+  document.getElementById('deck').addEventListener('click',function(e){if(e.target.closest('.dot'))return;show(i+1);});
+})();
+</script>
+</body></html>

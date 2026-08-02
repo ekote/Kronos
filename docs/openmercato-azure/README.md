@@ -14,6 +14,10 @@ same real-time loop and model-health guardrail, different data source.
 - **[architecture.md](./architecture.md)** — the full design: the honest
   Kronos-fit note, Open Mercato events → OHLC "sales bars", the event bridge, and
   **both** the Fabric and Azure-only variants (they share the same KQL).
+- **[slides/openmercato-deck.html](./slides/openmercato-deck.html)** /
+  **[.pdf](./slides/openmercato-deck.pdf)** — the 8-slide deck (the gap, the
+  architecture with both options, the value, and the live demo charts). Regenerate
+  with `python deploy/openmercato/build_om_deck.py`.
 
 ## The idea in one picture
 
