@@ -5,12 +5,26 @@ Kronos financial foundation model as a production, streaming forecasting service
 on Microsoft Azure, using **Microsoft Fabric Real-Time Intelligence (RTI/RTA)**
 as the data backbone and **Azure Machine Learning** as the GPU model plane.
 
-## Intro slides
+## Slides
 
-A 3-slide visual intro to the solution (the gap, the two-plane architecture, the
-value) — a standalone HTML deck with keyboard/click navigation and light/dark
-themes: [`slides/solution-intro.html`](./slides/solution-intro.html). Open it in
-a browser and use ← / →.
+- **[`slides/solution-deck.html`](./slides/solution-deck.html)** — the full
+  **9-slide deck**: 3 intro slides (the gap → the two-plane architecture → the
+  value) followed by the live demo charts (price/forecast, model-health
+  guardrail, signals, KQL round-trip). Keyboard/click nav, light/dark themes.
+  Regenerate with `python deploy/azure/demo/build_deck.py`.
+- **[`slides/solution-deck.pdf`](./slides/solution-deck.pdf)** — the same deck
+  exported to PDF (one 1280×720 page per slide).
+- **[`slides/solution-intro.html`](./slides/solution-intro.html)** — just the 3
+  intro slides, if you want the short version.
+
+To re-export the PDF from the HTML:
+
+```bash
+python deploy/azure/demo/build_deck.py --out output
+/opt/pw-browsers/chromium --headless --no-pdf-header-footer \
+  --print-to-pdf=docs/azure/slides/solution-deck.pdf \
+  file://$PWD/output/solution-deck.html
+```
 
 ## Start here
 
