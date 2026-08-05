@@ -88,6 +88,14 @@ falsifiable; if any fails, Kronos is NO-GO.
 assumptions A1–A4*, with the WMAPE table beside the baselines — never as the
 headline.
 
+**Test it, don't assert it:** the companion Databricks notebook
+[`vestacy_kronos_wmape_benchmark.py`](./vestacy_kronos_wmape_benchmark.py)
+benchmarks a degenerate-bar Kronos arm against `statsforecast` (AutoETS +
+Croston) and TimesFM on WMAPE with calendar rolling-origin, and emits a
+machine-readable A1–A4 verdict. Point it at the real Unity Catalog table via the
+`source_table` widget; missing libraries report `SKIPPED` rather than failing the
+run. A2 (pooled fine-tune) is flagged as the next step, not run zero-shot.
+
 ---
 
 ## 5. Recommended methods instead (what should carry the verdict)
