@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>What Kronos Does — the model, explained</title>
+</head>
+<body>
+
+<style>
+:root{
+  --bg:#F4F5F7; --panel:#FFFFFF; --panel-2:#FAFBFC;
+  --ink:#141A26; --ink-2:#54607A; --ink-3:#8A93A8; --hair:#E4E7ED;
+  --accent:#2E7FD6; --accent-soft:#2E7FD618; --glow:#2E7FD61f;
+  --good:#1F9D63; --warn:#C77A15; --crit:#CC392E; --crit-soft:#CC392E14;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0B111C; --panel:#131A28; --panel-2:#0F1623;
+  --ink:#EAEEF6; --ink-2:#9DA8BE; --ink-3:#5F6A83; --hair:#222B3C;
+  --accent:#59A6F0; --accent-soft:#59A6F022; --glow:#59A6F033;
+  --good:#37C08A; --warn:#E0A040; --crit:#E85D51; --crit-soft:#E85D5118;
+}}
+:root[data-theme="light"]{ --bg:#F4F5F7; --panel:#FFFFFF; --panel-2:#FAFBFC;
+  --ink:#141A26; --ink-2:#54607A; --ink-3:#8A93A8; --hair:#E4E7ED;
+  --accent:#2E7FD6; --accent-soft:#2E7FD618; --glow:#2E7FD61f;
+  --good:#1F9D63; --warn:#C77A15; --crit:#CC392E; --crit-soft:#CC392E14; }
+:root[data-theme="dark"]{ --bg:#0B111C; --panel:#131A28; --panel-2:#0F1623;
+  --ink:#EAEEF6; --ink-2:#9DA8BE; --ink-3:#5F6A83; --hair:#222B3C;
+  --accent:#59A6F0; --accent-soft:#59A6F022; --glow:#59A6F033;
+  --good:#37C08A; --warn:#E0A040; --crit:#E85D51; --crit-soft:#E85D5118; }
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+  -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:56px 24px 96px;}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);}
+.eyebrow b{color:var(--accent);font-weight:600;}
+h1{font-size:clamp(30px,5vw,52px);line-height:1.05;letter-spacing:-.025em;margin:.3em 0 .3em;
+  text-wrap:balance;font-weight:660;}
+h2{font-size:clamp(20px,2.6vw,27px);letter-spacing:-.015em;margin:0 0 6px;font-weight:640;}
+.dek{font-size:clamp(16px,1.9vw,21px);line-height:1.5;color:var(--ink-2);max-width:60ch;}
+.lead-em{color:var(--ink);font-weight:600;}
+.section{margin-top:56px;}
+.section > p{color:var(--ink-2);max-width:70ch;}
+.hr{height:1px;background:var(--hair);border:0;margin:56px 0 0;}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px;}
+
+/* hero input->output strip */
+.io{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;margin-top:30px;
+  background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:26px 24px;}
+@media (max-width:720px){.io{grid-template-columns:1fr;}}
+.io .cap{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:10px;}
+.io .box{text-align:center;}
+.io svg{width:100%;height:auto;max-height:150px;}
+.io .mid{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--accent);}
+.io .mid .brain{font-family:var(--mono);font-weight:650;font-size:14px;border:1.5px solid var(--accent);
+  border-radius:10px;padding:12px 16px;background:var(--accent-soft);white-space:nowrap;}
+.io .mid .ar{font-size:20px;color:var(--ink-3);}
+@media (max-width:720px){.io .mid .ar{transform:rotate(90deg);}}
+
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px;}
+@media (max-width:820px){.pipe{grid-template-columns:1fr;}}
+.stagec{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:22px 20px;position:relative;}
+.stagec::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;background:var(--accent);
+  border-radius:3px;}
+.stagec .sn{font-family:var(--mono);font-size:12px;color:var(--ink-3);}
+.stagec h3{font-size:17px;margin:6px 0 8px;letter-spacing:-.01em;}
+.stagec p{margin:0;font-size:14px;color:var(--ink-2);line-height:1.5;}
+.stagec .code{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:10px;
+  background:var(--panel-2);border:1px solid var(--hair);border-radius:7px;padding:7px 9px;}
+.stagec .an{font-size:13px;color:var(--ink-3);margin-top:9px;font-style:italic;}
+
+/* concept cards */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px;}
+@media (max-width:720px){.cards{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:22px;}
+.card h3{font-size:16px;margin:0 0 7px;} .card p{margin:0;font-size:14px;color:var(--ink-2);line-height:1.5;}
+.card .tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:9px;}
+
+/* model family table */
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:20px;}
+th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;padding:9px 12px;border-bottom:1px solid var(--hair);}
+td{padding:11px 12px;border-bottom:1px solid var(--hair);}
+.mono{font-family:var(--mono);} .num{text-align:right;font-variant-numeric:tabular-nums;}
+tr .name{font-weight:620;}
+
+/* good/limit lists */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;}
+@media (max-width:720px){.two{grid-template-columns:1fr;}}
+.list{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:20px 22px;}
+.list.good{border-top:3px solid var(--good);} .list.limit{border-top:3px solid var(--warn);}
+.list h3{font-size:15px;margin:0 0 12px;} .list ul{margin:0;padding:0;list-style:none;}
+.list li{font-size:14px;color:var(--ink-2);padding:6px 0 6px 22px;position:relative;line-height:1.45;}
+.list li::before{position:absolute;left:0;top:6px;font-family:var(--mono);font-size:13px;}
+.list.good li::before{content:"✓";color:var(--good);} .list.limit li::before{content:"!";color:var(--warn);}
+
+.foot{margin-top:56px;color:var(--ink-3);font-size:13px;border-top:1px solid var(--hair);padding-top:20px;}
+.foot code{font-family:var(--mono);background:var(--panel-2);border:1px solid var(--hair);border-radius:5px;
+  padding:2px 6px;color:var(--ink-2);}
+.k-up{fill:var(--good);stroke:var(--good);} .k-dn{fill:var(--crit);stroke:var(--crit);}
+.k-fc{fill:none;stroke:var(--accent);} .k-dot{fill:var(--accent);}
+.k-mut{fill:var(--ink-3);stroke:var(--ink-3);}
+.refs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 22px;margin-top:18px;}
+@media (max-width:720px){.refs{grid-template-columns:1fr;}}
+.refs a{font-size:13.5px;color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;
+  padding:3px 0;}
+.refs a:hover{border-bottom-color:var(--accent);}
+.refs .rl{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);grid-column:1/-1;margin-top:4px;}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow"><b>Kronos</b> &nbsp;·&nbsp; a foundation model for the language of financial markets</div>
+  <h1>What Kronos does</h1>
+  <p class="dek">In one line: Kronos <span class="lead-em">reads recent price candles and writes the next
+    ones</span>. It's an open-source AI model pre-trained on candlestick data from 45+ exchanges — built to
+    treat markets like a language and forecast what comes next.</p>
+
+  <!-- INPUT -> OUTPUT -->
+  <div class="io">
+    <div class="box">
+      <div class="cap">Input · recent history</div>
+      <svg viewBox="0 0 220 120" aria-hidden="true">
+        <g stroke-width="2" class="k-mut">
+          <line x1="16" y1="60" x2="16" y2="96"/><rect x="11" y="70" width="10" height="20" rx="2"/>
+          <line x1="42" y1="48" x2="42" y2="88"/><rect x="37" y="58" width="10" height="22" rx="2"/>
+          <line x1="68" y1="40" x2="68" y2="80"/><rect x="63" y="50" width="10" height="20" rx="2"/>
+          <line x1="94" y1="34" x2="94" y2="70"/><rect x="89" y="42" width="10" height="20" rx="2"/>
+          <line x1="120" y1="30" x2="120" y2="64"/><rect x="115" y="38" width="10" height="18" rx="2"/>
+          <line x1="146" y1="26" x2="146" y2="58"/><rect x="141" y="32" width="10" height="18" rx="2"/>
+          <line x1="172" y1="24" x2="172" y2="52"/><rect x="167" y="30" width="10" height="16" rx="2"/>
+          <line x1="198" y1="22" x2="198" y2="48"/><rect x="193" y="27" width="10" height="15" rx="2"/>
+        </g>
+        <text x="0" y="114" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">open · high · low · close · volume</text>
+      </svg>
+    </div>
+    <div class="mid"><span class="ar">→</span><span class="brain">KRONOS</span><span class="ar">→</span></div>
+    <div class="box">
+      <div class="cap">Output · forecast candles</div>
+      <svg viewBox="0 0 220 120" aria-hidden="true">
+        <g stroke-width="2" class="k-fc" stroke-dasharray="4 3">
+          <path d="M8 40 L40 44 L72 40 L104 52 L136 50 L168 58 L200 54"/>
+        </g>
+        <g stroke-width="2">
+          <g class="k-up">
+            <line x1="40" y1="34" x2="40" y2="66"/><rect x="35" y="42" width="10" height="16" rx="2"/>
+            <line x1="72" y1="30" x2="72" y2="60"/><rect x="67" y="36" width="10" height="16" rx="2"/>
+          </g>
+          <g class="k-dn">
+            <line x1="104" y1="40" x2="104" y2="76"/><rect x="99" y="48" width="10" height="20" rx="2"/>
+            <line x1="168" y1="46" x2="168" y2="80"/><rect x="163" y="52" width="10" height="20" rx="2"/>
+          </g>
+        </g>
+        <circle class="k-dot" cx="200" cy="54" r="3.5"/>
+        <text x="0" y="114" font-family="var(--mono)" font-size="9" fill="var(--accent)">the next N candles</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="section">
+    <div class="kicker">How it works</div>
+    <h2>Markets as a language, in three steps</h2>
+    <p>Kronos borrows the idea behind large language models. A sentence is a sequence of words; a chart is a
+      sequence of candles. Kronos learns the "grammar" of price action, then continues the sentence.</p>
+
+    <div class="pipe">
+      <div class="stagec">
+        <div class="sn">Step 1</div>
+        <h3>Tokenize the candles</h3>
+        <p>A specialized <b>tokenizer</b> turns each continuous candle (OHLCV) into a small set of
+          <b>discrete tokens</b> — like turning a sound into letters, so a language model can read it.</p>
+        <div class="code">KronosTokenizer · BSQuantizer</div>
+        <div class="an">Hierarchical tokens: a coarse "s1" token + a fine "s2" token per step.</div>
+      </div>
+      <div class="stagec">
+        <div class="sn">Step 2</div>
+        <h3>Predict the next tokens</h3>
+        <p>A GPT-style <b>decoder-only Transformer</b> reads the token sequence (plus time-of-day / day-of-week
+          context) and predicts the next token — again and again, <b>one step at a time</b>.</p>
+        <div class="code">Kronos · autoregressive</div>
+        <div class="an">This is "autoregressive": each new candle feeds the guess for the one after.</div>
+      </div>
+      <div class="stagec">
+        <div class="sn">Step 3</div>
+        <h3>Decode back to prices</h3>
+        <p>The predicted tokens are <b>decoded back into candles</b> and un-normalized to real price levels —
+          giving you forecasted open/high/low/close (and volume) for each future step.</p>
+        <div class="code">KronosPredictor.predict()</div>
+        <div class="an">From raw history to forecast in one call — normalization handled for you.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY IDEAS -->
+  <div class="section">
+    <div class="kicker">Two ideas that make it useful</div>
+    <div class="cards">
+      <div class="card">
+        <div class="tag">Probabilistic, not a single line</div>
+        <h3>It samples many possible futures</h3>
+        <p>Because it predicts a <em>distribution</em> over next tokens, you can draw many candidate paths and
+          average them — tuned with <span class="mono">temperature</span>, <span class="mono">top-p</span> and
+          <span class="mono">sample_count</span>. More samples → a steadier, less jumpy forecast.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Foundation model</div>
+        <h3>Pre-trained broadly, adaptable to you</h3>
+        <p>It's trained on data from 45+ global exchanges, so it works out of the box — and can be
+          <b>fine-tuned</b> on your own instruments and timeframes to sharpen it for your task.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODEL FAMILY -->
+  <div class="section">
+    <div class="kicker">One family, several sizes</div>
+    <h2>Pick the size that fits the job</h2>
+    <p>Smaller models are fast and cheap; larger ones forecast with more nuance. All share the same interface.</p>
+    <table>
+      <thead><tr><th>Model</th><th class="num">Parameters</th><th class="num">Context (candles)</th><th>Good for</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Kronos-mini</td><td class="num mono">4.1M</td><td class="num mono">2048</td><td>fast, long look-back, cheap</td></tr>
+        <tr><td class="name">Kronos-small</td><td class="num mono">24.7M</td><td class="num mono">512</td><td>balanced speed &amp; quality</td></tr>
+        <tr><td class="name">Kronos-base</td><td class="num mono">102.3M</td><td class="num mono">512</td><td>higher-quality forecasts</td></tr>
+        <tr><td class="name">Kronos-large</td><td class="num mono">499.2M</td><td class="num mono">512</td><td>most nuanced (research)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- GOOD FOR / LIMITS -->
+  <div class="section">
+    <div class="kicker">Straight talk</div>
+    <h2>What it's good for — and what it isn't</h2>
+    <div class="two">
+      <div class="list good">
+        <h3>Good for</h3>
+        <ul>
+          <li>Short-horizon forecasts of price &amp; volume candles</li>
+          <li>Momentum / direction signals over a chosen window</li>
+          <li>A base to fine-tune on your own market data</li>
+          <li>Feeding a real-time monitoring &amp; alerting loop</li>
+        </ul>
+      </div>
+      <div class="list limit">
+        <h3>Not this</h3>
+        <ul>
+          <li>Predicting unscheduled shocks — no model can</li>
+          <li>A guaranteed, profitable trading strategy</li>
+          <li>Financial advice — forecasts are inputs, not decisions</li>
+          <li>A replacement for your risk controls &amp; human judgment</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFERENCES -->
+  <div class="section">
+    <div class="kicker">Learn more — public sources</div>
+    <h2>References</h2>
+    <div class="refs">
+      <span class="rl">Kronos (the model)</span>
+      <a href="https://github.com/shiyu-coder/Kronos">Kronos on GitHub ↗</a>
+      <a href="https://arxiv.org/abs/2508.02739">Paper (arXiv 2508.02739) ↗</a>
+      <a href="https://huggingface.co/NeoQuasar">Models on Hugging Face ↗</a>
+      <span class="rl">Runs on Azure &amp; Microsoft Fabric</span>
+      <a href="https://learn.microsoft.com/fabric/real-time-intelligence/overview">Fabric Real-Time Intelligence ↗</a>
+      <a href="https://learn.microsoft.com/fabric/real-time-intelligence/eventhouse">Eventhouse (KQL) ↗</a>
+      <a href="https://learn.microsoft.com/azure/machine-learning/concept-endpoints-online?view=azureml-api-2">Azure ML online endpoints ↗</a>
+    </div>
+  </div>
+
+  <p class="foot">Kronos is open-source (MIT) — models on the Hugging Face Hub, code in this repo
+    (<code>model/kronos.py</code>). This page explains the model itself; for how it runs as a live service on
+    Azure &amp; Microsoft Fabric, see the solution deck and architecture docs under <code>docs/azure/</code>.
+    Full concept-by-concept source list: <code>docs/azure/references.md</code>.</p>
+</div>
+
+</body>
+</html>

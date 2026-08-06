@@ -68,6 +68,14 @@ ENV/
 env.bak/
 venv.bak/
 
+# Demo output
+deploy/azure/demo/output/
+deploy/openmercato/output/
+
+# Local env / secrets
+.env
+!.env.example
+
 # Temporary files
 *.tmp
 *.temp

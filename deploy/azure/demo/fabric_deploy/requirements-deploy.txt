@@ -1,0 +1,4 @@
+# Deployment-only deps (the demo itself needs nothing beyond the stdlib).
+azure-identity>=1.16
+azure-kusto-data>=4.5
+requests>=2.31

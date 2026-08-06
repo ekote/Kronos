@@ -1,0 +1,9 @@
+# Azure ML managed online endpoint for Kronos.
+#   az ml online-endpoint create -f endpoint.yml
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: kronos-forecast
+description: Kronos financial K-line forecasting (OHLCV) — managed online endpoint.
+auth_mode: key            # or aad_token; store the key in Key Vault for the orchestrator
+tags:
+  project: kronos
+  plane: model-serving

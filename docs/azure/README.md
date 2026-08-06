@@ -1,0 +1,101 @@
+# Kronos on Azure — Microsoft Fabric Real-Time Intelligence
+
+This folder contains a **reference solution and architecture** for running the
+Kronos financial foundation model as a production, streaming forecasting service
+on Microsoft Azure, using **Microsoft Fabric Real-Time Intelligence (RTI/RTA)**
+as the data backbone and **Azure Machine Learning** as the GPU model plane.
+
+## Slides
+
+**Which explainer for whom:** engineers → the architecture doc below · a customer
+new to it → the **customer primer** · a Microsoft seller → the **seller guide** ·
+anyone / non-technical → **ELI5**. All four describe the same `solution-deck.pdf`.
+New to the model itself? → **[`slides/what-kronos-does.html`](./slides/what-kronos-does.html)**
+explains what Kronos does (tokenize → predict → decode), independent of Azure.
+Public docs for every component (Microsoft Learn + GitHub/Hugging Face/arXiv),
+mapped concept-by-concept → **[`references.md`](./references.md)**.
+
+- **[`slides/solution-deck.html`](./slides/solution-deck.html)** — the full
+  **9-slide deck**: 3 intro slides (the gap → the two-plane architecture → the
+  value) followed by the live demo charts (price/forecast, model-health
+  guardrail, signals, KQL round-trip). Keyboard/click nav, light/dark themes.
+  Regenerate with `python deploy/azure/demo/build_deck.py`.
+- **[`slides/solution-deck.pdf`](./slides/solution-deck.pdf)** — the same deck
+  exported to PDF (one 1280×720 page per slide).
+- **[`slides/solution-deck-eli5.md`](./slides/solution-deck-eli5.md)** — the PDF
+  explained in the simplest possible words (no jargon), for a non-technical reader.
+- **[`slides/solution-deck-customer-primer.md`](./slides/solution-deck-customer-primer.md)** —
+  for a customer who's heard of Fabric and Kronos and nothing more: places the two
+  names correctly, explains the combined solution, fit, and honest boundaries.
+- **[`slides/solution-deck-seller-guide.md`](./slides/solution-deck-seller-guide.md)** —
+  a field guide for Microsoft sellers/partners: ICP, consumption story, discovery
+  questions, objection handling, and landmines to avoid.
+- **[`slides/solution-intro.html`](./slides/solution-intro.html)** — just the 3
+  intro slides, if you want the short version.
+
+To re-export the PDF from the HTML:
+
+```bash
+python deploy/azure/demo/build_deck.py --out output
+/opt/pw-browsers/chromium --headless --no-pdf-header-footer \
+  --print-to-pdf=docs/azure/slides/solution-deck.pdf \
+  file://$PWD/output/solution-deck.html
+```
+
+## Start here
+
+- **[kronos-on-azure-fabric-rta.md](./kronos-on-azure-fabric-rta.md)** — the full
+  design: architecture diagram, component design, data flow, MLOps, sizing, and
+  cross-cutting concerns (security, networking, cost, DR).
+
+## Runnable demo (start here to see the value)
+
+A **zero-dependency** end-to-end demo runs the whole architecture on a synthetic
+trading session and renders a self-contained HTML report:
+
+```bash
+python deploy/azure/demo/run_demo.py   # writes output/kronos_fabric_demo.html
+```
+
+It tells the story in three acts — momentum signals during the rally, an
+unpredictable news shock, and a model-health guardrail that **auto-detects the
+regime break within ~17 minutes**. See [`deploy/azure/demo/`](../../deploy/azure/demo/).
+
+## Reference implementation
+
+Concrete, staged scaffolding lives under [`deploy/azure/`](../../deploy/azure/):
+
+| Path | What it is |
+|---|---|
+| `deploy/azure/fabric/eventhouse/01_raw_and_bronze.kql` | `ticks_raw` table + ingestion mapping + retention/caching |
+| `deploy/azure/fabric/eventhouse/02_ohlcv_materialized_views.kql` | `candles_1m` / `candles_5m` materialized views + model lookback functions |
+| `deploy/azure/fabric/eventhouse/03_forecast_dashboard_activator.kql` | `forecasts` table + dashboard queries + Data Activator signals |
+| `deploy/azure/fabric/eventhouse/04_signals_and_alerts.kql` | `signals` + `model_health_alerts` event-log tables & scoreboards |
+| `deploy/azure/demo/` | Runnable zero-dependency demo that emits every stage as replayable KQL |
+| `deploy/azure/fabric/notebooks/kronos_rt_inference.py` | Orchestrator: Eventhouse → Azure ML endpoint → Eventhouse |
+| `deploy/azure/azureml/score.py` | Endpoint scoring using `KronosPredictor.predict_batch` |
+| `deploy/azure/azureml/endpoint.yml`, `deployment.yml`, `environment/conda.yml` | Managed online endpoint (GPU) |
+| `deploy/azure/infra/main.bicep` | Event Hubs + Key Vault + Azure ML workspace skeleton |
+
+## The 60-second version
+
+```
+Market feeds ─▶ Event Hubs ─▶ Fabric Eventstream ─▶ Eventhouse (ticks_raw)
+                                                          │  materialized views
+                                                          ▼
+                                                   candles_1m / candles_5m
+                                                          │  latest 400 candles
+                                                          ▼
+                        Fabric notebook ──invoke──▶ Azure ML GPU endpoint (Kronos)
+                                     ▲                    │  forecast candles
+                                     └────────────────────┘
+                                                          ▼
+                                            Eventhouse (forecasts)
+                                              │                  │
+                                              ▼                  ▼
+                                   Real-Time Dashboard    Data Activator (alerts)
+```
+
+Fabric owns **data, time, and action**; Azure ML owns **the model (train +
+serve)**. They meet at **OneLake** (data + model artifacts) and a thin,
+idempotent invocation boundary. See the full doc for details.
